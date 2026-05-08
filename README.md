@@ -1,6 +1,6 @@
-# gridsense
+# GridSense
 
-`gridsense` builds kinematic support plots from one or more `PineAPPL` interpolation grids. If grids from other interpolation libraries are used, they must be imported via the PineAPPL before using.
+`GridSense` builds kinematic support plots from one or more `PineAPPL` interpolation grids. Grids from other interpolation libraries must be imported via PineAPPL CLI before they can be used.
 
 The current workflow is:
 
@@ -158,8 +158,8 @@ max_as = 1
 Notes:
 
 - if `pdg` is omitted, no PDG filter is applied
-- by convention, `pdg = 0` means gluon selection in the TOML. Internally, `gridsense` maps this to `0` or `21` depending on the grid convention
-- electroweak order is kept up to the maximum available for the grid
+- by convention, `pdg = 0` means gluon selection in the TOML. Internally, `GridSense` maps this to `0` or `21` depending on the grid convention
+- electroweak order (if available) is kept up to the maximum available for the grid
 
 ## Labels and LaTeX-style text
 
