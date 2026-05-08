@@ -1,0 +1,40 @@
+path_to_grids = "/home/jnieh/uni/downloads/grids/pineappl" #if the grids share a common path
+
+[grids.wm_atlas]
+path = "WZ/matrixhawaii-atlas-wm-arxiv-1612.03016/grids/matrixhawaii-atlas-wm-arxiv-1612.03016-xsec000.lz4"
+label = 'Wm ATLAS $\frac{d\sigma}{|d\eta_l|}$'
+
+[grids.z0_lhcb]
+path = "WZ/matrixhawaii-lhcb-z0-arxiv-1505.07024/grids/matrixhawaii-lhcb-z0-arxiv-1505.07024-xsec000.lz4"
+label = 'Z0 LHCb $\frac{d\sigma}{dy_{\ell\ell}}$'
+
+[grids.incjets_cms]
+path = "/home/jnieh/uni/downloads/grids/pineappl/cms-incjets-arxiv-2111.10431/cms-incjets-appl-arxiv-2111.10431-xsec4to7-pt_jet_R04.lz4"
+label = "Incjets CMS"
+
+[output]
+#process_grid = ["wm_atlas", "z0_lhcb", "incjets_cms"]
+process_grid = ["z0_lhcb"]
+#detail = 1 #1 or 0
+#process_grid = ["incjets_cms"]
+path_plot = "output/plots/fullgrid.pdf"
+
+
+#configuration of the grid that is plotted later
+[config]
+nx_x = 22
+nx_q2 = 15
+x_min = 0.0001
+x_max = 1.0
+q2_min = 100.0
+q2_max = 100000000.0
+threshold = 0.88
+
+[selection]
+pdg = 0 #use zero for gluon per default
+max_as = 1 # We always take the highest a_ew order if available
+
+#später welche order channel etc.
+
+#Morgen oder WE noch
+#Mehrere Plots, wenn mehrere PDG ausgewählt

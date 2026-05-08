@@ -1,0 +1,15 @@
+[package]
+name = "gridsense"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+pineappl = { path = "/home/jnieh/uni/projects/pineappl_fork/pineappl/pineappl"}
+lhapdf = "0.2.4"
+anyhow = { version = "1.0", default-features = false }
+thiserror = "2.0.18"
+tempfile = "3.27.0"

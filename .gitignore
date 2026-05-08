@@ -1,0 +1,4 @@
+/target
+.codex
+__pycache__/
+ToDo.txt
