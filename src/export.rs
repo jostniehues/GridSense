@@ -15,6 +15,7 @@ pub struct PlotDataset<'a> {
     pub name: &'a str,
     pub label: &'a str,
     pub aux_grid: &'a AuxGrid,
+    pub pdg: &'a Option<i32>,
 }
 
 /// Writes (bin, q2, x, xvar, contrib) rows to a CSV file.

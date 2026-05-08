@@ -30,11 +30,11 @@ pub fn extract_kinematics(
         &mut alphas
     );
 
-    let channel_mask = vec![true; 116];
+    // let channel_mask = vec![true; 116];
     //channel_mask[0] = true;
 
     let order_mask = build_order_mask(grid, selection);
-    dbg!(&order_mask);
+
 
  
     //some grids may use 0 or 21 for gluon pdg
@@ -46,12 +46,12 @@ pub fn extract_kinematics(
 
   
     // "regular" convolution as a sanity check
-    // TBD
+    // Todo: implement the sanity check
     let _regular_conv = grid.convolve(
         &mut convolution_cache,
         &order_mask,
         &[],
-        &channel_mask,
+        &[],
         &[(1.0, 1.0, 1.0)]
     );
 

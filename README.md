@@ -144,14 +144,15 @@ This block controls global filters applied to all processed grids.
 
 Currently implemented:
 
-- `pdg`: optional PDG filter
+- `pdgs`: optional PDG filter. 
 - `max_as`: maximum QCD order. 
+If wanted the user can choose multiple PDGs in order to create a seperate plot for each pdg.
 
 Example:
 
 ```toml
 [selection]
-pdg = 0
+pdg = [0,3]
 max_as = 1
 ```
 

@@ -17,7 +17,7 @@ use std::process::Command;
 use export::{ write_auxgrids_tmp_json, write_q2xcontrib_csv, PlotDataset };
 use transform::{ build_relevance, ranked_cells, sort_into_auxgrid, sum_over_x };
 
-use crate::{ config::GridConfig, transform::AuxGrid };
+use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
 
 #[derive(Debug, Parser)]
 #[command(
@@ -32,7 +32,7 @@ struct Cli {
 }
 
 // helper function to process multiple grids
-fn process_grid(grid_name: &str, config: &GridConfig) -> Result<AuxGrid> {
+fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> Result<AuxGrid> {
     let grid_path = resolve_grid_path(&config, grid_name)?;
 
     let grid_file = File::open(&grid_path).with_context(||
@@ -42,7 +42,7 @@ fn process_grid(grid_name: &str, config: &GridConfig) -> Result<AuxGrid> {
         format!("could not read grid '{}'", grid_path.display())
     )?;
 
-    let kinematics = extract_kinematics(&grid, config.selection())?;
+    let kinematics = extract_kinematics(&grid, selection)?;
     let summed_points_x1 = sum_over_x(&kinematics, transform::XVar::X1)?;
     let summed_points_x2 = sum_over_x(&kinematics, transform::XVar::X2)?;
 
@@ -75,23 +75,25 @@ fn run() -> Result<()> {
 
     let mut aux_grids = Vec::new();
 
-    for grid_name in config.grids() {
-        let aux_grid = process_grid(grid_name, &config)?;
-        let label = config.grid_label(grid_name)?;
-        aux_grids.push((grid_name.to_string(), label.to_string(), aux_grid));
+    for selec in config.selection() {
+        for grid_name in config.grids() {
+            let aux_grid = process_grid(grid_name, &config, &selec)?;
+            let label = config.grid_label(grid_name)?;
+            aux_grids.push((grid_name.to_string(), label.to_string(), selec.pdg(), aux_grid));
+        }
     }
 
     let plot_datasets: Vec<_> = aux_grids
         .iter()
-        .map(|(name, label, aux_grid)| PlotDataset {
+        .map(|(name, label, pdg, aux_grid)| PlotDataset {
             name,
             label,
+            pdg,
             aux_grid,
         })
         .collect();
 
     let tmp_file = write_auxgrids_tmp_json(&plot_datasets)?;
-    
 
     // final plot path
     let plot_path = config.plot_path();

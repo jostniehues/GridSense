@@ -1,4 +1,4 @@
-//! Module to read the grids.toml file.
+//! Module to read the grids.toml file
 
 use std::collections::HashMap;
 use std::fs;
@@ -9,24 +9,14 @@ use serde::Deserialize;
 
 use crate::transform::GridSpec;
 
-/// Root structure of the TOML configuration file.
-///
-/// Example:
-///
-/// ```toml
-/// path_to_grids = "/data/pineappl"
-///
-/// [grids]
-/// ttbar = "top_pair.pineappl.lz4"
-/// zpt = "z_pt_grid.pineappl.lz4"
-/// ```
+/// Root structure of the TOML configuration file
 #[derive(Debug, Deserialize)]
 pub struct GridConfig {
     path_to_grids: PathBuf,
     grids: HashMap<String, GridEntry>,
     output: OutputConfig,
     config: TransformConfig,
-    selection: Selection,
+    selection_conf: SelectionConfig,
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,14 +37,20 @@ struct OutputConfig {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Selection {
-    pdg: Option<i32>,
+struct SelectionConfig {
+    pdgs: Option<Vec<i32>>,
     max_as: Option<u8>
 }
 #[derive(Debug, Deserialize)]
 struct GridEntry {
     path: PathBuf,
     label: String,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Selection {
+    pdg: Option<i32>,
+    max_as: Option<u8>
 }
 
 
@@ -83,9 +79,10 @@ impl GridConfig {
         &self.output.process_grid
     }
 
-    pub fn selection(&self) -> &Selection {
-        &self.selection
+    pub fn selection(&self) -> Vec<Selection> {
+        self.selection_conf.selection()
     }
+
 
     pub fn grid_label(&self, grid_name: &str) -> Result<&str> {
         self.grids
@@ -94,6 +91,45 @@ impl GridConfig {
             .ok_or_else(|| anyhow!("grid '{grid_name}' is not defined in the configuration file"))
     }
 }
+
+impl SelectionConfig {
+    pub fn selection(&self) -> Vec<Selection> {
+        match &self.pdgs {
+            Some(pdgs) if !pdgs.is_empty() => pdgs
+                .iter()
+                .copied()
+                .map(|pdg| Selection {
+                    pdg: Some(pdg),
+                    max_as: self.max_as,
+                })
+                .collect(),
+            _ => vec![Selection {
+                pdg: None,
+                max_as: self.max_as,
+            }],
+        }
+    }
+}
+
+
+// if we later also want to keep always the pdg=None case (that always a reference plot is created)
+// impl SelectionConfig {
+//     pub fn selection(&self) -> Vec<Selection> {
+//         let mut selections = vec![Selection {
+//             pdg: None,
+//             max_as: self.max_as,
+//         }];
+
+//         if let Some(pdgs) = &self.pdgs {
+//             selections.extend(pdgs.iter().copied().map(|pdg| Selection {
+//                 pdg: Some(pdg),
+//                 max_as: self.max_as,
+//             }));
+//         }
+
+//         selections
+//     }
+// }
 
 impl Selection {
     pub fn pdg(&self) -> Option<i32> {
