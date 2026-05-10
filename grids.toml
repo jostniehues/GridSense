@@ -14,7 +14,7 @@ label = "Incjets CMS"
 
 [output]
 #process_grid = ["wm_atlas", "z0_lhcb", "incjets_cms"]
-process_grid = ["z0_lhcb"]
+process_grid = ["z0_lhcb","wm_atlas"]
 #detail = 1 #1 or 0
 #process_grid = ["incjets_cms"]
 path_plot = "output/plots/fullgrid.pdf"
@@ -32,6 +32,6 @@ threshold = 0.88
 
 [selection_conf]
 #pdgs = [0] #use zero for gluon per default
-pdgs = [0,1]
-#max_as = 1 # We always take the highest a_ew order if available
+pdgs = [0,1,3]
+max_as = 1 # We always take the highest a_ew order if available
 

@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::{ fs::File };
 use std::path::PathBuf;
 
 use anyhow::{ Context, Result };
@@ -10,12 +10,13 @@ mod grids;
 mod transform;
 mod export;
 use config::{ read_config, resolve_grid_path };
+use std::io::{ self, Write };
 use grids::extract_kinematics;
 use std::path::Path;
 use std::process::Command;
 
 use export::{ write_auxgrids_tmp_json, write_q2xcontrib_csv, PlotDataset };
-use transform::{ build_relevance, ranked_cells, sort_into_auxgrid, sum_over_x };
+use transform::{ build_relevance, ranked_cells, sort_into_auxgrid, sum_over_x,union_aux_grid };
 
 use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
 
@@ -31,7 +32,7 @@ struct Cli {
     config: PathBuf,
 }
 
-// helper function to process multiple grids
+/// helper function to process multiple grids
 fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> Result<AuxGrid> {
     let grid_path = resolve_grid_path(&config, grid_name)?;
 
@@ -52,11 +53,32 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
 
     // Grid operations
     let relevance_x1 = build_relevance(&summed_points_x1)?;
+    let relevance_x2 = build_relevance(&summed_points_x2)?;
     let grid_spec = config.grid_spec();
-    let aux_grid = sort_into_auxgrid(&relevance_x1, &grid_spec)?;
-    let ranked_aux_grid = ranked_cells(aux_grid, config.threshold())?;
+    let aux_grid_x1 = sort_into_auxgrid(&relevance_x1, &grid_spec)?;
+    let aux_grid_x2 = sort_into_auxgrid(&relevance_x2, &grid_spec)?;
+    let ranked_aux_grid_x1 = ranked_cells(aux_grid_x1, config.threshold())?;
+    let ranked_aux_grid_x2 = ranked_cells(aux_grid_x2, config.threshold())?;
+    let union_grid = union_aux_grid(&ranked_aux_grid_x1, &ranked_aux_grid_x2)?;
 
-    Ok(ranked_aux_grid)
+    Ok(union_grid)
+}
+
+/// Let user confirm that (s)he wants to override the path if it already exsits
+fn confirm_overwrite(path: &Path) -> Result<bool> {
+    if path.exists() {
+        print!("File '{}' already exists. Overwrite? [y/n]: ", path.display());
+        io::stdout().flush()?;
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+
+        let input = input.trim().to_lowercase();
+
+        Ok(input == "y" || input == "yes" || input == "j" || input == "ja")
+    } else {
+        Ok(true)
+    }
 }
 
 fn main() {
@@ -71,8 +93,17 @@ fn run() -> Result<()> {
     let cli = Cli::parse();
     let config = read_config(&cli.config)?;
 
-    // create temporary json file
+    // final plot path
+    let plot_path = config.plot_path();
 
+    let overwrite = confirm_overwrite(plot_path)?;
+    //if user does not want to overwrite
+    if !overwrite {
+        println!("Aborted, existing plot was not overwritten.");
+        return Ok(());
+    }
+
+    // create temporary json file
     let mut aux_grids = Vec::new();
 
     for selec in config.selection() {
@@ -95,8 +126,7 @@ fn run() -> Result<()> {
 
     let tmp_file = write_auxgrids_tmp_json(&plot_datasets)?;
 
-    // final plot path
-    let plot_path = config.plot_path();
+
     if let Some(parent) = plot_path.parent() {
         std::fs::create_dir_all(parent)?;
     }

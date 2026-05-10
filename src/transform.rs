@@ -36,6 +36,8 @@ pub enum TransformError {
     EmptyAuxGrid,
     #[error("coverage threshold must lie in [0, 1], got {0}")]
     InvalidCoverageThreshold(f64),
+    #[error("structure of x1 and x2 AuxGrid differs")]
+    DifferentAuxGrids,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -136,10 +138,7 @@ pub fn build_relevance(
         .collect())
 } 
 
-/// Sort the points into a logarithmic auxilary grid
-/// 
-/// ToBeDone. Extract Details from grid.toml. Currently we store the relevant struct here but in the future it 
-/// should be stored in config.rs
+/// Specification of the plottet grid
 pub struct GridSpec{
     pub nx_q2: usize, //number of nodes
     pub nx_x: usize,
@@ -296,4 +295,41 @@ pub fn ranked_cells(mut aux_grid: AuxGrid, threshold: f64) -> Result<AuxGrid, Tr
     Ok(aux_grid)
 }
 
+/// Build the union of the x1 and x2 maps on the same auxiliary grid.
+pub fn union_aux_grid(x1: &AuxGrid, x2: &AuxGrid) -> Result<AuxGrid, TransformError> {
+    let lq_match = do_vecs_match(&x1.lq_edges, &x2.lq_edges);
+    let lx_match = do_vecs_match(&x1.lx_edges, &x2.lx_edges);
+    if !lx_match || !lq_match {
+        return Err(TransformError::DifferentAuxGrids);
+    }
 
+    if x1.weights.len() != x2.weights.len() {
+        return Err(TransformError::DifferentAuxGrids);
+    }
+
+    let mut weights = Vec::with_capacity(x1.weights.len());
+
+    for (row_x1, row_x2) in x1.weights.iter().zip(&x2.weights) {
+        if row_x1.len() != row_x2.len() {
+            return Err(TransformError::DifferentAuxGrids);
+        }
+
+        let averaged_row = row_x1
+            .iter()
+            .zip(row_x2.iter())
+            .map(|(w1, w2)| (w1 + w2) / 2.0)
+            .collect();
+
+        weights.push(averaged_row);
+    }
+
+    Ok(AuxGrid {
+        lx_edges: x1.lx_edges.clone(),
+        lq_edges: x1.lq_edges.clone(),
+        weights,
+    })
+}
+
+fn do_vecs_match<T: PartialEq>(a: &[T], b: &[T]) -> bool {
+    a == b
+}
