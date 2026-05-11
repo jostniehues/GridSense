@@ -16,7 +16,7 @@ use std::path::Path;
 use std::process::Command;
 
 use export::{ write_auxgrids_tmp_json, write_q2xcontrib_csv, PlotDataset };
-use transform::{ build_relevance, ranked_cells, sort_into_auxgrid, sum_over_x,union_aux_grid };
+use transform::{ build_relevance, ranked_cells, sort_into_auxgrid, sum_over_x, union_aux_grid };
 
 use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
 
@@ -48,8 +48,13 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
     let summed_points_x2 = sum_over_x(&kinematics, transform::XVar::X2)?;
 
     //TODO: Dieses Spezifkation soll geprinted werden, wenn detail flag in toml gegeben ist. Derzeit aber hardgecoded
-    let path = Path::new("output/data/grid.csv");
-    write_q2xcontrib_csv(&summed_points_x1, &summed_points_x2, path)?;
+    //pro grid. Mit path aus .toml + grid_name.
+    if config.detail() == true {
+        let output_dir = Path::new("output/data/contrib");
+        let path = output_dir.join(format!("{grid_name}.csv"));
+
+        write_q2xcontrib_csv(&summed_points_x1, &summed_points_x2, &path)?;
+    }
 
     // Grid operations
     let relevance_x1 = build_relevance(&summed_points_x1)?;
@@ -110,22 +115,22 @@ fn run() -> Result<()> {
         for grid_name in config.grids() {
             let aux_grid = process_grid(grid_name, &config, &selec)?;
             let label = config.grid_label(grid_name)?;
-            aux_grids.push((grid_name.to_string(), label.to_string(), selec.pdg(), aux_grid));
+            aux_grids.push((grid_name.to_string(), label.to_string(), selec.pdg(), aux_grid, selec.max_as()));
         }
     }
 
     let plot_datasets: Vec<_> = aux_grids
         .iter()
-        .map(|(name, label, pdg, aux_grid)| PlotDataset {
+        .map(|(name, label, pdg, aux_grid,max_as )| PlotDataset {
             name,
             label,
             pdg,
             aux_grid,
+            max_as
         })
         .collect();
 
     let tmp_file = write_auxgrids_tmp_json(&plot_datasets)?;
-
 
     if let Some(parent) = plot_path.parent() {
         std::fs::create_dir_all(parent)?;

@@ -86,6 +86,7 @@ label = 'Z0 LHCb $\frac{d\sigma}{dy_{\ell\ell}}$'
 [output]
 process_grid = ["wm_atlas", "z0_lhcb"]
 path_plot = "output/plots/fullgrid.pdf"
+detail = false
 
 [config]
 nx_x = 22
@@ -122,6 +123,7 @@ This block controls what gets plotted and where the final PDF is written.
 
 - `process_grid`: list of grid names to process
 - `path_plot`: output path for the generated PDF
+- `detail`: (bool). If a .csv should be generated per grid writing (bin,q2,x,contrib) for each        interpolation grid node.
 
 
 If a name listed in `process_grid` does not exactly match a `[grids.<name>]` section, the run fails.

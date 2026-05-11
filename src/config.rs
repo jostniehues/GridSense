@@ -34,6 +34,7 @@ struct TransformConfig {
 struct OutputConfig {
     path_plot: PathBuf,
     process_grid: Vec<String>,
+    detail: bool
 }
 
 #[derive(Debug, Deserialize)]
@@ -73,6 +74,10 @@ impl GridConfig {
 
     pub fn threshold(&self) -> f64 {
         self.config.threshold
+    }
+
+    pub fn detail(&self) -> bool {
+        self.output.detail
     }
 
     pub fn grids(&self) -> &[String] {

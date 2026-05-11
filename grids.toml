@@ -2,7 +2,7 @@ path_to_grids = "/home/jnieh/uni/downloads/grids/pineappl" #if the grids share a
 
 [grids.wm_atlas]
 path = "WZ/matrixhawaii-atlas-wm-arxiv-1612.03016/grids/matrixhawaii-atlas-wm-arxiv-1612.03016-xsec000.lz4"
-label = 'Wm ATLAS $\frac{d\sigma}{|d\eta_l|}$'
+label = 'Wm ATLAS $\frac{d\sigma}{d|\eta_l|}$'
 
 [grids.z0_lhcb]
 path = "WZ/matrixhawaii-lhcb-z0-arxiv-1505.07024/grids/matrixhawaii-lhcb-z0-arxiv-1505.07024-xsec000.lz4"
@@ -15,7 +15,7 @@ label = "Incjets CMS"
 [output]
 #process_grid = ["wm_atlas", "z0_lhcb", "incjets_cms"]
 process_grid = ["z0_lhcb","wm_atlas"]
-#detail = 1 #1 or 0
+detail = false #true or false
 #process_grid = ["incjets_cms"]
 path_plot = "output/plots/fullgrid.pdf"
 

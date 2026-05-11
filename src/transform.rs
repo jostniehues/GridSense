@@ -20,7 +20,6 @@ pub struct SummedContribution {
 pub struct RelevancePoint {
     pub x: f64,
     pub q2: f64,
-    pub xvar: XVar,
     pub relevance: f64,
 }
 
@@ -97,7 +96,7 @@ pub fn sum_over_x(
 pub fn build_relevance(
     contrib: &[Vec<SummedContribution>],
 ) -> Result<Vec<RelevancePoint>, TransformError> {
-    let mut grouped = BTreeMap::<(u64, u64, u8), f64>::new();
+    let mut grouped = BTreeMap::<(u64, u64), f64>::new();
 
     for bin in contrib {
         // Per bin: for each node l we take abs(contrib).
@@ -108,11 +107,7 @@ pub fn build_relevance(
         }
 
         for point in bin {
-            let xvar_id = match point.xvar {
-                XVar::X1 => 1,
-                XVar::X2 => 2,
-            };
-            let key = (point.x.to_bits(), point.q2.to_bits(), xvar_id);
+            let key = (point.x.to_bits(), point.q2.to_bits());
             let normalized = point.value.abs() / total_per_bin;
 
             *grouped.entry(key).or_insert(0.0) += normalized;
@@ -125,14 +120,9 @@ pub fn build_relevance(
 
     Ok(grouped
         .into_iter()
-        .map(|((x_bits, q2_bits, xvar_id), relevance)| RelevancePoint {
+        .map(|((x_bits, q2_bits), relevance)| RelevancePoint {
             x: f64::from_bits(x_bits),
             q2: f64::from_bits(q2_bits),
-            xvar: match xvar_id {
-                1 => XVar::X1,
-                2 => XVar::X2,
-                _ => unreachable!("invalid xvar id"),
-            },
             relevance,
         })
         .collect())

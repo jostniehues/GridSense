@@ -28,6 +28,11 @@ def pdg_title(pdg):
 
     return f"{pdg_dic[pdg]}"
 
+def as_title(order):
+    if order is None:
+        return f",all orders"
+    return rf"up to $\alpha_s^{order}$"
+    
 
 
 
@@ -69,7 +74,8 @@ def main() -> int:
 
         name = entry["name"]
         pdg = entry["pdg"]
-
+        max_as = entry["max_as"]
+    
         if name not in grid_colors:
             grid_colors[name] = colors[len(grid_colors) % len(colors)]
             legend_handles[name] = Patch(
@@ -129,7 +135,9 @@ def main() -> int:
             spine.set_linewidth(1.1)
 
     axes[0].set_ylabel(r"$Q^2\;[\mathrm{GeV}^2]$", fontsize=18)
-    fig.suptitle("Grid-based Kinematic Support", fontsize=20)
+
+    title_as = as_title(max_as)
+    fig.suptitle(f"Grid-based Kinematic Support {title_as}", fontsize=20)
 
     fig.legend(
         handles=list(legend_handles.values()),
