@@ -16,7 +16,7 @@ use std::path::Path;
 use std::process::Command;
 
 use export::{ write_auxgrids_tmp_json, write_q2xcontrib_csv, PlotDataset };
-use transform::{ build_relevance, ranked_cells, sort_into_auxgrid, sum_over_x, union_aux_grid };
+use transform::{ build_support_map_3d, ranked_cells, sum_over_x };
 
 use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
 
@@ -44,29 +44,22 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
     )?;
 
     let kinematics = extract_kinematics(&grid, selection)?;
-    let summed_points_x1 = sum_over_x(&kinematics, transform::XVar::X1)?;
-    let summed_points_x2 = sum_over_x(&kinematics, transform::XVar::X2)?;
-
-    //TODO: Dieses Spezifkation soll geprinted werden, wenn detail flag in toml gegeben ist. Derzeit aber hardgecoded
-    //pro grid. Mit path aus .toml + grid_name.
+  
     if config.detail() == true {
+        let summed_points_x1 = sum_over_x(&kinematics, transform::XVar::X1)?;
+        let summed_points_x2 = sum_over_x(&kinematics, transform::XVar::X2)?;
         let output_dir = Path::new("output/data/contrib");
         let path = output_dir.join(format!("{grid_name}.csv"));
 
         write_q2xcontrib_csv(&summed_points_x1, &summed_points_x2, &path)?;
     }
 
-    // Grid operations
-    let relevance_x1 = build_relevance(&summed_points_x1)?;
-    let relevance_x2 = build_relevance(&summed_points_x2)?;
+    // Build the normalized support map from the three-dimensional auxiliary binning.
     let grid_spec = config.grid_spec();
-    let aux_grid_x1 = sort_into_auxgrid(&relevance_x1, &grid_spec)?;
-    let aux_grid_x2 = sort_into_auxgrid(&relevance_x2, &grid_spec)?;
-    let ranked_aux_grid_x1 = ranked_cells(aux_grid_x1, config.threshold())?;
-    let ranked_aux_grid_x2 = ranked_cells(aux_grid_x2, config.threshold())?;
-    let union_grid = union_aux_grid(&ranked_aux_grid_x1, &ranked_aux_grid_x2)?;
+    let support_grid = build_support_map_3d(&kinematics, &grid_spec)?;
+    let ranked_grid = ranked_cells(support_grid, config.threshold())?;
 
-    Ok(union_grid)
+    Ok(ranked_grid)
 }
 
 /// Let user confirm that (s)he wants to override the path if it already exsits
