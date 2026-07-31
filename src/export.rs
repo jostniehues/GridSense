@@ -14,6 +14,7 @@ use crate::transform::{ AuxGrid, SummedContribution, XVar };
 pub struct PlotDataset<'a> {
     pub name: &'a str,
     pub label: &'a str,
+    pub group: Option<&'a str>,
     pub aux_grid: &'a AuxGrid,
     pub pdg: &'a Option<i32>,
     pub max_as: &'a Option<u8>,

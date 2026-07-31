@@ -43,7 +43,7 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
         format!("could not read grid '{}'", grid_path.display())
     )?;
 
-    let kinematics = extract_kinematics(&grid, selection)?;
+    let kinematics = extract_kinematics(&grid, selection,config.pdf())?;
   
     if config.detail() == true {
         let summed_points_x1 = sum_over_x(&kinematics, transform::XVar::X1)?;
@@ -117,6 +117,7 @@ fn run() -> Result<()> {
         .map(|(name, label, pdg, aux_grid,max_as )| PlotDataset {
             name,
             label,
+            group: config.group_for_grid(name),
             pdg,
             aux_grid,
             max_as

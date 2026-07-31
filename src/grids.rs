@@ -11,16 +11,18 @@ use pineappl::evolution::gluon_has_pid_zero;
 
 pub fn extract_kinematics(
     grid: &Grid,
-    selection: &Selection
+    selection: &Selection,
+    pdf_name: &str
 ) -> Result<Vec<Vec<KinematicsContribution>>> {
     lhapdf::set_verbosity(0);
+    let pdf = Pdf::with_setname_and_member(pdf_name, 0).with_context(|| {
+        format!("could not load LHAPDF set '{pdf_name}' member 0")
+    })?;
 
-    let pdf = Pdf::with_setname_and_member("CT18NNLO", 0).context(
-        "could not load LHAPDF set 'CT18NNLO' member 0"
-    )?;
-    let pdf_alphas = Pdf::with_setname_and_member("CT18NNLO", 0).context(
-        "could not load LHAPDF set 'CT18NNLO' member 0 for alpha_s"
-    )?;
+    let pdf_alphas = Pdf::with_setname_and_member(pdf_name, 0).with_context(|| {
+        format!("could not load LHAPDF set '{pdf_name}' member 0 for alpha_s")
+    })?;
+
     let mut xfx = |id, x, q2| pdf.xfx_q2(id, x, q2);
     let mut alphas = |q2: f64| pdf_alphas.alphas_q2(q2);
 
@@ -30,13 +32,8 @@ pub fn extract_kinematics(
         &mut alphas
     );
 
-    // let channel_mask = vec![true; 116];
-    //channel_mask[0] = true;
-
     let order_mask = build_order_mask(grid, selection);
 
-
- 
     //some grids may use 0 or 21 for gluon pdg
     let pdg = match selection.pdg() {
         Some(0) if gluon_has_pid_zero(grid) => Some(0),
@@ -44,7 +41,6 @@ pub fn extract_kinematics(
         other => other,
     };
 
-  
     // "regular" convolution as a sanity check
     // Todo: implement the sanity check
     let _regular_conv = grid.convolve(
@@ -54,7 +50,6 @@ pub fn extract_kinematics(
         &[],
         &[(1.0, 1.0, 1.0)]
     );
-
 
     let contributions = grid.convolve_extract_kinematics(
         &mut convolution_cache,
@@ -68,8 +63,7 @@ pub fn extract_kinematics(
     Ok(contributions)
 }
 
-
-// Build a order mask matching the condition in selection since different bins have different available order. 
+// Build a order mask matching the condition in selection since different bins have different available order.
 fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
     grid.orders()
         .iter()
@@ -81,4 +75,3 @@ fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
         })
         .collect()
 }
-

@@ -1,6 +1,7 @@
 import json
 import sys
 
+from matplotlib.collections import LineCollection
 from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,11 +31,38 @@ def pdg_title(pdg):
 
 def as_title(order):
     if order is None:
-        return f",all orders"
-    return rf"up to $\alpha_s^{order}$"
+        return f"All Orders"
+    return rf"Up to $\alpha_s^{order}$"
     
 
 
+
+
+def support_boundary_segments(x_edges, q2_edges, selected):
+    """Return the exposed cell edges of a boolean support mask."""
+    segments = []
+    nq, nx = selected.shape
+
+    for iq in range(nq):
+        for ix in range(nx):
+            if not selected[iq, ix]:
+                continue
+
+            x_left = x_edges[ix]
+            x_right = x_edges[ix + 1]
+            q_bottom = q2_edges[iq]
+            q_top = q2_edges[iq + 1]
+
+            if ix == 0 or not selected[iq, ix - 1]:
+                segments.append(((x_left, q_bottom), (x_left, q_top)))
+            if ix == nx - 1 or not selected[iq, ix + 1]:
+                segments.append(((x_right, q_bottom), (x_right, q_top)))
+            if iq == 0 or not selected[iq - 1, ix]:
+                segments.append(((x_left, q_bottom), (x_right, q_bottom)))
+            if iq == nq - 1 or not selected[iq + 1, ix]:
+                segments.append(((x_left, q_top), (x_right, q_top)))
+
+    return segments
 
 
 def main() -> int:
@@ -63,8 +91,17 @@ def main() -> int:
         "#17becf",
     ]
 
+    line_styles = [
+        "--",
+        "-.",
+        (0, (5, 2, 1, 2)),
+        (0, (3, 1)),
+        (0, (1, 1)),
+    ]
+
     pdg_groups = {}
     grid_colors = {}
+    grid_linestyles = {}
     legend_handles = {}
 
     for entry in data:
@@ -73,16 +110,23 @@ def main() -> int:
             return 1
 
         name = entry["name"]
+        group = entry.get("group")
+        style_key = group or name
+        style_label = group or entry["label"]
         pdg = entry["pdg"]
         max_as = entry["max_as"]
     
-        if name not in grid_colors:
-            grid_colors[name] = colors[len(grid_colors) % len(colors)]
-            legend_handles[name] = Patch(
-                facecolor=grid_colors[name],
-                edgecolor="none",
-                label=entry["label"],
-                alpha=0.9,
+        if style_key not in grid_colors:
+            style_index = len(grid_colors)
+            grid_colors[style_key] = colors[style_index % len(colors)]
+            grid_linestyles[style_key] = line_styles[style_index % len(line_styles)]
+            legend_handles[style_key] = Patch(
+                facecolor=grid_colors[style_key],
+                edgecolor=grid_colors[style_key],
+                linewidth=1.5,
+                linestyle=grid_linestyles[style_key],
+                label=style_label,
+                alpha=0.7,
             )
 
         pdg_groups.setdefault(pdg, []).append(entry)
@@ -99,18 +143,33 @@ def main() -> int:
     axes = axes[0]
 
     for ax, pdg in zip(axes, ordered_pdgs):
+        grouped_support = {}
+
         for entry in pdg_groups[pdg]:
             aux_grid = entry["aux_grid"]
             lx_edges = np.asarray(aux_grid["lx_edges"], dtype=float)
             lq_edges = np.asarray(aux_grid["lq_edges"], dtype=float)
             weights = np.asarray(aux_grid["weights"], dtype=float)
+            style_key = entry.get("group") or entry["name"]
 
             x_edges = np.power(10.0, lx_edges)
             q2_edges = np.power(10.0, lq_edges)
 
-            # Plot only the selected support area, not the raw relevance values.
-            mask = np.where(weights > 0.0, 1.0, np.nan)
-            color = grid_colors[entry["name"]]
+            if style_key not in grouped_support:
+                grouped_support[style_key] = {
+                    "x_edges": x_edges,
+                    "q2_edges": q2_edges,
+                    "selected": weights > 0.0,
+                }
+            else:
+                grouped_support[style_key]["selected"] |= weights > 0.0
+
+        for style_key, support in grouped_support.items():
+            x_edges = support["x_edges"]
+            q2_edges = support["q2_edges"]
+            selected = support["selected"]
+            mask = np.where(selected, 1.0, np.nan)
+            color = grid_colors[style_key]
 
             ax.pcolormesh(
                 x_edges,
@@ -120,24 +179,42 @@ def main() -> int:
                 cmap=plt.matplotlib.colors.ListedColormap([color]),
                 vmin=0.0,
                 vmax=1.0,
-                edgecolors=(0.0, 0.0, 0.0, 0.28),
-                linewidth=0.22,
-                alpha=0.65,
+                edgecolors=(0.0, 0.0, 0.0, 1.0),
+                linewidth=0.15,
+                alpha=0.55,
             )
+
+            boundary = support_boundary_segments(
+                x_edges,
+                q2_edges,
+                selected,
+            )
+            if boundary:
+                ax.add_collection(
+                    LineCollection(
+                        boundary,
+                        colors=[color],
+                        linewidths=2.5,
+                        linestyles=grid_linestyles[style_key],
+                        alpha=0.95,
+                        zorder=3,
+                    )
+                )
 
         ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_title(pdg_title(pdg), fontsize=16)
         ax.set_xlabel(r"$x$", fontsize=18)
         ax.tick_params(axis="both", which="major", labelsize=13, width=1.0, length=6)
+        ax.minorticks_off()
 
         for spine in ax.spines.values():
             spine.set_linewidth(1.1)
 
-    axes[0].set_ylabel(r"$Q^2\;[\mathrm{GeV}^2]$", fontsize=18)
+    axes[0].set_ylabel(r"$\mu^2\;[\mathrm{GeV}^2]$", fontsize=18)
 
     title_as = as_title(max_as)
-    fig.suptitle(f"Grid-based Kinematic Support {title_as}", fontsize=20)
+    fig.suptitle(rf"$\mathtt{{GridSense}}$ Kinematic Support. {title_as}", fontsize=20,)
 
     fig.legend(
         handles=list(legend_handles.values()),

@@ -34,13 +34,17 @@ struct TransformConfig {
 struct OutputConfig {
     path_plot: PathBuf,
     process_grid: Vec<String>,
-    detail: bool
+    detail: bool,
+
+    #[serde(default)]
+    groups: HashMap<String, Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
 struct SelectionConfig {
     pdgs: Option<Vec<i32>>,
-    max_as: Option<u8>
+    max_as: Option<u8>,
+    pdf: String,
 }
 #[derive(Debug, Deserialize)]
 struct GridEntry {
@@ -51,9 +55,8 @@ struct GridEntry {
 #[derive(Debug, Clone, Copy)]
 pub struct Selection {
     pdg: Option<i32>,
-    max_as: Option<u8>
+    max_as: Option<u8>,
 }
-
 
 /// Getter functions
 impl GridConfig {
@@ -70,6 +73,9 @@ impl GridConfig {
             q2_min: self.config.q2_min,
             q2_max: self.config.q2_max,
         }
+    }
+    pub fn pdf(&self) -> &str {
+        &self.selection_conf.pdf
     }
 
     pub fn threshold(&self) -> f64 {
@@ -88,34 +94,61 @@ impl GridConfig {
         self.selection_conf.selection()
     }
 
-
     pub fn grid_label(&self, grid_name: &str) -> Result<&str> {
         self.grids
             .get(grid_name)
             .map(|entry| entry.label.as_str())
             .ok_or_else(|| anyhow!("grid '{grid_name}' is not defined in the configuration file"))
     }
+
+    pub fn group_for_grid(&self, grid_name: &str) -> Option<&str> {
+        self.output.groups.iter().find_map(|(group_name, grids)| {
+            grids
+                .iter()
+                .any(|name| name == grid_name)
+                .then_some(group_name.as_str())
+        })
+    }
+
+    //check if grids from [output.groups] are also in process_grid
+    fn validate_groups(&self) -> Result<()> {
+        let all_grouped_grids_are_processed = self
+            .output
+            .groups
+            .values()
+            .flatten()
+            .all(|grid_name| self.output.process_grid.contains(grid_name));
+
+        if !all_grouped_grids_are_processed {
+            return Err(anyhow!(
+                "at least one grid in output.groups is not listed in output.process_grid"
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 impl SelectionConfig {
     pub fn selection(&self) -> Vec<Selection> {
         match &self.pdgs {
-            Some(pdgs) if !pdgs.is_empty() => pdgs
-                .iter()
-                .copied()
-                .map(|pdg| Selection {
-                    pdg: Some(pdg),
+            Some(pdgs) if !pdgs.is_empty() =>
+                pdgs
+                    .iter()
+                    .copied()
+                    .map(|pdg| Selection {
+                        pdg: Some(pdg),
+                        max_as: self.max_as,
+                    })
+                    .collect(),
+            _ =>
+                vec![Selection {
+                    pdg: None,
                     max_as: self.max_as,
-                })
-                .collect(),
-            _ => vec![Selection {
-                pdg: None,
-                max_as: self.max_as,
-            }],
+                }],
         }
     }
 }
-
 
 // if we later also want to keep always the pdg=None case (that always a reference plot is created)
 // impl SelectionConfig {
@@ -152,9 +185,13 @@ pub fn read_config(config_path: &Path) -> Result<GridConfig> {
         ::read_to_string(config_path)
         .with_context(|| format!("could not read config file '{}'", config_path.display()))?;
 
-    toml::from_str(&raw_config).with_context(||
+    let config: GridConfig = toml::from_str(&raw_config).with_context(||
         format!("could not parse config file '{}'", config_path.display())
-    )
+    )?;
+
+    config.validate_groups()?;
+
+    Ok(config)
 }
 
 /// Resolves the full filesystem path for a configured grid name. Get the file_name for a certain grid

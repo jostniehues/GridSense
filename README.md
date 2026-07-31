@@ -88,6 +88,9 @@ process_grid = ["wm_atlas", "z0_lhcb"]
 path_plot = "output/plots/fullgrid.pdf"
 detail = false
 
+[output.groups]
+"Vector bosons" = ["wm_atlas", "z0_lhcb"]
+
 [config]
 nx_x = 22
 nx_q2 = 15
@@ -124,6 +127,7 @@ This block controls what gets plotted and where the final PDF is written.
 - `process_grid`: list of grid names to process
 - `path_plot`: output path for the generated PDF
 - `detail`: (bool). If a .csv should be generated per grid writing (bin,q2,x,contrib) for each        interpolation grid node.
+- `output.groups`: optional named groups. Group members share one color and line style and are plotted as one combined area with a common outer boundary. Every grouped grid must also occur in `process_grid`.
 
 
 If a name listed in `process_grid` does not exactly match a `[grids.<name>]` section, the run fails.
@@ -180,5 +184,4 @@ The project may currently create:
 The CSV is currently a fixed debug-style output and may change later.
 
 The temporary JSON sent to Python is not meant to be kept.
-
 
