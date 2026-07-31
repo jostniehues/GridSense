@@ -59,7 +59,7 @@ process_grid = ["z0_lhcb"]
 #process_grid= ["ttbar_cms_yt","ttbar_cms_yttbar" ,"ttbar_cms_mttbar"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/draft/z0_lhcb_partons.pdf"
+path_plot = "output/plots/test.pdf"
 #[output.groups]
 "W Production" = ["wm_atlas", "wm_lhcb","wp_atlas","wp_lhcb"]
 "Z Produciton" = ["z0_atlas", "z0_lhcb"]
@@ -79,6 +79,6 @@ threshold = 0.90
 [selection_conf]
 pdf = "CT18NNLO"
 #pdgs = [2] #use zero for gluon per default
-pdgs = [0,1,2,3, -1,-2,-3]
+#pdgs = [0,1,2,3, -1,-2,-3]
 #max_as = 3 # We always take the highest a_ew order if available
 

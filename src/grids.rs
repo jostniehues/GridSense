@@ -41,9 +41,7 @@ pub fn extract_kinematics(
         other => other,
     };
 
-    // "regular" convolution as a sanity check
-    // Todo: implement the sanity check
-    let _regular_conv = grid.convolve(
+    let regular_conv = grid.convolve(
         &mut convolution_cache,
         &order_mask,
         &[],
@@ -60,10 +58,14 @@ pub fn extract_kinematics(
         pdg
     );
 
+    if pdg.is_none() {
+        check_convolution_closure(&regular_conv, &contributions)?;
+    }
+
     Ok(contributions)
 }
 
-// Build a order mask matching the condition in selection since different bins have different available order.
+/// Build a order mask matching the condition in selection since different bins have different available order.
 fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
     grid.orders()
         .iter()
@@ -74,4 +76,39 @@ fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
             as_ok && no_scale_logs
         })
         .collect()
+}
+
+/// Function to check that the convolution over every single grid point reproduces the pineappl convolution
+fn check_convolution_closure(
+    regular: &[f64],
+    node_contrib: &[Vec<KinematicsContribution>]
+) -> Result<()> {
+    if regular.len() != node_contrib.len() {
+        anyhow::bail!(
+            "sanity check failed: convolution and extracted contributions have different numbers of bins"
+        );
+    }
+    const REL_TOLERANCE: f64 = 1.0e-8;
+    const ABS_TOLERANCE: f64 = 1.0e-12;
+
+   
+    for (bin_index, (expected, bin)) in regular.iter().zip(node_contrib).enumerate() {
+        let reconstructed: f64 = bin
+            .iter()
+            .map(|point| point.value)
+            .sum(); //sum over all interpolation grid points
+
+        let difference = (reconstructed - expected).abs();
+        let tolerance = ABS_TOLERANCE + REL_TOLERANCE * expected.abs();
+        println!("{}", difference);
+
+        if difference > tolerance {
+            anyhow::bail!(
+                "sanity check failed in observable bin {bin_index}: \
+                 regular convolution = {expected}, \
+                 reconstructed contribution = {reconstructed}"
+            );
+        }
+    }
+    Ok(())
 }
