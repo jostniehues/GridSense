@@ -1,0 +1,50 @@
+observable:
+  name: "1/sigma dsigma/dy(top)"
+  unit: "1"
+
+bins:
+  - id: 0
+    ranges: { "y(top)": { low: -2.5, high: -1.6 } }
+    value: 0.0736
+  - id: 1
+    ranges: { "y(top)": { low: -1.6, high: -1.2 } }
+    value: 0.175
+  - id: 2
+    ranges: { "y(top)": { low: -1.2, high: -0.8 } }
+    value: 0.261
+  - id: 3
+    ranges: { "y(top)": { low: -0.8, high: -0.4 } }
+    value: 0.3
+  - id: 4
+    ranges: { "y(top)": { low: -0.4, high: 0.0 } }
+    value: 0.333
+  - id: 5
+    ranges: { "y(top)": { low: 0.0, high: 0.4 } }
+    value: 0.331
+  - id: 6
+    ranges: { "y(top)": { low: 0.4, high: 0.8 } }
+    value: 0.3
+  - id: 7
+    ranges: { "y(top)": { low: 0.8, high: 1.2 } }
+    value: 0.247
+  - id: 8
+    ranges: { "y(top)": { low: 1.2, high: 1.6 } }
+    value: 0.188
+  - id: 9
+    ranges: { "y(top)": { low: 1.6, high: 2.5 } }
+    value: 0.0777
+
+uncertainties:
+  - name: "stat"
+    kind: "uncorrelated"
+    unit: "absolute"
+    per_bin: [0.00184, 0.00265, 0.00357, 0.00385, 0.00412, 0.00400, 0.00383, 0.00335, 0.00266, 0.00185]
+
+  - name: "sys"
+    kind: "uncorrelated"
+    unit: "absolute"
+    per_bin: [0.00279, 0.00428, 0.00776, 0.00381, 0.00495, 0.00535, 0.00528, 0.00749, 0.00299, 0.00262]
+
+grid_to_dat_norm:
+  kind: global
+  factor: 244227.914   # = 244.22 pb

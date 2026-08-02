@@ -27,14 +27,19 @@ label = 'Wp LHCb $\frac{d\sigma}{d|\eta_l|}$'
 [grids.ttbar_cms_yt]
 path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec000.lz4"
 label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dy_t}$'
+experimental_data = "input/ttbar/Table_21.yaml"
 
 [grids.ttbar_cms_yttbar]
 path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec001.lz4"
 label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dy_{t\bar{t}}}$'
+experimental_data = "input/ttbar/Table_36.yaml"
+
 
 [grids.ttbar_cms_mttbar]
 path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec002.lz4"
 label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dm_{tt\bar{t}}}$'
+experimental_data = "input/ttbar/Table_39.yaml"
+
 
 [grids.incjets_cms_pT]
 path = "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec4to7-pt_jet_R04.lz4"
@@ -54,12 +59,12 @@ label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 [output]
 #process_grid = ["wm_atlas"]
 #process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms", "dijets", "wm_atlas", "wm_lhcb","wp_atlas", "wp_lhcb","ttbar_cms_yt"]
-#process_grid = ["z0_lhcb", "incjets_cms", "wm_atlas"]
-process_grid = ["z0_lhcb"]
-#process_grid= ["ttbar_cms_yt","ttbar_cms_yttbar" ,"ttbar_cms_mttbar"]
+#process_grid = ["z0_lhcb", "incjets_cms_pT", "wm_atlas"]
+#process_grid = ["z0_lhcb"]
+process_grid= ["ttbar_cms_yttbar"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/test.pdf"
+path_plot = "output/plots/ttbar_yt_supp.pdf"
 #[output.groups]
 "W Production" = ["wm_atlas", "wm_lhcb","wp_atlas","wp_lhcb"]
 "Z Produciton" = ["z0_atlas", "z0_lhcb"]

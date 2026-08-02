@@ -50,6 +50,7 @@ struct SelectionConfig {
 struct GridEntry {
     path: PathBuf,
     label: String,
+    experimental_data: Option<PathBuf>
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -124,10 +125,29 @@ impl GridConfig {
                 "at least one grid in output.groups is not listed in output.process_grid"
             ));
         }
-
+    
         Ok(())
     }
+
+    pub fn experimental_data_path(
+        &self,
+        grid_name: &str,
+    ) -> Result<PathBuf> {
+        let entry = self.grids.get(grid_name).ok_or_else(|| {
+            anyhow!("grid '{grid_name}' is not defined in the configuration file")
+        })?;
+
+        let path = entry.experimental_data.as_ref().ok_or_else(|| {
+            anyhow!(
+                "grid '{grid_name}' has no experimental_data entry"
+            )
+        })?;
+
+        Ok(path.clone())
+    }
 }
+
+
 
 impl SelectionConfig {
     pub fn selection(&self) -> Vec<Selection> {

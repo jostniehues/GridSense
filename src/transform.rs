@@ -90,6 +90,12 @@ pub struct AuxGrid {
     pub weights: Vec<Vec<f64>>,
 }
 
+pub(crate) struct BinSupportMaps {
+    pub(crate) lx_edges: Vec<f64>,
+    pub(crate) lq_edges: Vec<f64>,
+    pub(crate) weights: Vec<Vec<Vec<f64>>>,
+}
+
 /// Signed contributions C_{B,u} for one observable bin.
 /// Index order: weights[iq][ix1][ix2]
 struct AuxGrid3D {
@@ -184,11 +190,11 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
     Some(projected)
 }
 
-/// Build W_Z = 1/N_B sum_B P_B,z
-pub fn build_support_map_3d(
+/// Calculate all single P_B,z. 
+pub(crate) fn build_per_bin_support_maps(
     contrib: &[Vec<KinematicsContribution>],
     grid_spec: &GridSpec
-) -> Result<AuxGrid, TransformError> {
+) -> Result<BinSupportMaps, TransformError> {
     if
         grid_spec.nx_x == 0 ||
         grid_spec.nx_q2 == 0 ||
@@ -201,16 +207,8 @@ pub fn build_support_map_3d(
     }
 
     let lx_edges = logarithmic_edges(grid_spec.x_min, grid_spec.x_max, grid_spec.nx_x);
-
     let lq_edges = logarithmic_edges(grid_spec.q2_min, grid_spec.q2_max, grid_spec.nx_q2);
-
-    let mut combined =
-        vec![
-            vec![0.0; grid_spec.nx_x];
-            grid_spec.nx_q2
-        ];
-
-    let mut included_bins = 0usize;
+    let mut weights = Vec::with_capacity(contrib.len());
 
     for bin in contrib {
         let cells = accumulate_bin_in_3d(bin, &lx_edges, &lq_edges);
@@ -219,30 +217,51 @@ pub fn build_support_map_3d(
             continue;
         };
 
-        included_bins += 1;
+        weights.push(projected);
+    }
 
-        for iq in 0..grid_spec.nx_q2 {
-            for ix in 0..grid_spec.nx_x {
+    if weights.is_empty() {
+        return Err(TransformError::EmptyRelevanceInput);
+    }
+
+    Ok(BinSupportMaps {
+        lx_edges,
+        lq_edges,
+        weights,
+    })
+}
+
+/// Build W_Z = 1/N_B sum_B P_B,z
+pub fn average_support_maps(
+    bin_support: BinSupportMaps
+) -> AuxGrid {
+    let nx = bin_support.lx_edges.len() - 1;
+    let nq = bin_support.lq_edges.len() - 1;
+    let mut combined =
+        vec![
+            vec![0.0; nx];
+            nq
+        ];
+
+    for projected in &bin_support.weights {
+        for iq in 0..nq {
+            for ix in 0..nx {
                 combined[iq][ix] += projected[iq][ix];
             }
         }
     }
 
-    if included_bins == 0 {
-        return Err(TransformError::EmptyRelevanceInput);
-    }
-
     for row in &mut combined {
         for weight in row {
-            *weight /= included_bins as f64;
+            *weight /= bin_support.weights.len() as f64;
         }
     }
 
-    Ok(AuxGrid {
-        lx_edges,
-        lq_edges,
+    AuxGrid {
+        lx_edges: bin_support.lx_edges,
+        lq_edges: bin_support.lq_edges,
         weights: combined,
-    })
+    }
 }
 
 fn find_bin(value: f64, edges: &[f64]) -> Option<usize> {

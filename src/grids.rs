@@ -100,7 +100,6 @@ fn check_convolution_closure(
 
         let difference = (reconstructed - expected).abs();
         let tolerance = ABS_TOLERANCE + REL_TOLERANCE * expected.abs();
-        println!("{}", difference);
 
         if difference > tolerance {
             anyhow::bail!(

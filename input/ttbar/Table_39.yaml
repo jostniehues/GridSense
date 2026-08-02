@@ -1,0 +1,39 @@
+observable:
+  name: "1/sigma dsigma/dm(ttbar)"
+  unit: "1/GeV"
+
+bins:
+  - id: 0
+    ranges: { "m(ttbar)": { low: 345.0, high: 400.0 } }
+    value: 0.00469
+  - id: 1
+    ranges: { "m(ttbar)": { low: 400.0, high: 470.0 } }
+    value: 0.0043
+  - id: 2
+    ranges: { "m(ttbar)": { low: 470.0, high: 550.0 } }
+    value: 0.00267
+  - id: 3
+    ranges: { "m(ttbar)": { low: 550.0, high: 650.0 } }
+    value: 0.00117
+  - id: 4
+    ranges: { "m(ttbar)": { low: 650.0, high: 800.0 } }
+    value: 0.000466
+  - id: 5
+    ranges: { "m(ttbar)": { low: 800.0, high: 1100.0 } }
+    value: 0.000114
+  - id: 6
+    ranges: { "m(ttbar)": { low: 1100.0, high: 1600.0 } }
+    value: 0.000011
+
+uncertainties:
+  - name: "stat"
+    kind: "uncorrelated"
+    unit: "absolute"
+    per_bin: [0.0000999, 0.0000916, 0.0000538, 0.0000274, 0.0000117, 0.00000337, 0.000000883]
+
+  - name: "sys"
+    kind: "uncorrelated"
+    unit: "absolute"
+    per_bin: [0.000335, 0.000124, 0.000163, 0.0000852, 0.0000197, 0.0000108, 0.00000108]
+
+grid_to_dat_norm: null
