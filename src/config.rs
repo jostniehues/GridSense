@@ -29,6 +29,18 @@ struct TransformConfig {
     q2_max: f64,
     threshold: f64,
 }
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum PlotStyle {
+    Boundary,
+    Heatmap,
+}
+
+impl Default for PlotStyle {
+    fn default() -> Self {
+        Self::Boundary
+    }
+}
 
 #[derive(Debug, Deserialize)]
 struct OutputConfig {
@@ -38,6 +50,9 @@ struct OutputConfig {
 
     #[serde(default)]
     groups: HashMap<String, Vec<String>>,
+
+    #[serde(default)]
+    plot_style: PlotStyle,
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,7 +65,7 @@ struct SelectionConfig {
 struct GridEntry {
     path: PathBuf,
     label: String,
-    experimental_data: Option<PathBuf>
+    experimental_data: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -111,43 +126,43 @@ impl GridConfig {
         })
     }
 
+    pub fn plot_style(&self) -> &'static str {
+        match self.output.plot_style {
+            PlotStyle::Boundary => "boundary",
+            PlotStyle::Heatmap => "heatmap",
+        }
+    }
+
     //check if grids from [output.groups] are also in process_grid
     fn validate_groups(&self) -> Result<()> {
-        let all_grouped_grids_are_processed = self
-            .output
-            .groups
+        let all_grouped_grids_are_processed = self.output.groups
             .values()
             .flatten()
             .all(|grid_name| self.output.process_grid.contains(grid_name));
 
         if !all_grouped_grids_are_processed {
-            return Err(anyhow!(
-                "at least one grid in output.groups is not listed in output.process_grid"
-            ));
+            return Err(
+                anyhow!("at least one grid in output.groups is not listed in output.process_grid")
+            );
         }
-    
+
         Ok(())
     }
 
-    pub fn experimental_data_path(
-        &self,
-        grid_name: &str,
-    ) -> Result<PathBuf> {
-        let entry = self.grids.get(grid_name).ok_or_else(|| {
-            anyhow!("grid '{grid_name}' is not defined in the configuration file")
-        })?;
+    pub fn experimental_data_path(&self, grid_name: &str) -> Result<PathBuf> {
+        let entry = self.grids
+            .get(grid_name)
+            .ok_or_else(|| {
+                anyhow!("grid '{grid_name}' is not defined in the configuration file")
+            })?;
 
-        let path = entry.experimental_data.as_ref().ok_or_else(|| {
-            anyhow!(
-                "grid '{grid_name}' has no experimental_data entry"
-            )
-        })?;
+        let path = entry.experimental_data
+            .as_ref()
+            .ok_or_else(|| { anyhow!("grid '{grid_name}' has no experimental_data entry") })?;
 
         Ok(path.clone())
     }
 }
-
-
 
 impl SelectionConfig {
     pub fn selection(&self) -> Vec<Selection> {
@@ -205,9 +220,9 @@ pub fn read_config(config_path: &Path) -> Result<GridConfig> {
         ::read_to_string(config_path)
         .with_context(|| format!("could not read config file '{}'", config_path.display()))?;
 
-    let config: GridConfig = toml::from_str(&raw_config).with_context(||
-        format!("could not parse config file '{}'", config_path.display())
-    )?;
+    let config: GridConfig = toml
+        ::from_str(&raw_config)
+        .with_context(|| format!("could not parse config file '{}'", config_path.display()))?;
 
     config.validate_groups()?;
 

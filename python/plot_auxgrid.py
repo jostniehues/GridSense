@@ -2,6 +2,7 @@ import json
 import sys
 
 from matplotlib.collections import LineCollection
+from matplotlib.colors import LinearSegmentedColormap, to_rgb
 from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -65,13 +66,32 @@ def support_boundary_segments(x_edges, q2_edges, selected):
     return segments
 
 
+def single_color_map(color, name):
+    """Build a light-to-full gradient from one process color."""
+    rgb = np.asarray(to_rgb(color))
+    light_rgb = 1.0 - 0.15 * (1.0 - rgb)
+    return LinearSegmentedColormap.from_list(
+        f"{name}_gradient",
+        [light_rgb, rgb],
+    )
+
+
 def main() -> int:
-    if len(sys.argv) != 3:
-        print("usage: python/plot_auxgrid.py <input.json> <output.pdf>", file=sys.stderr)
+    if len(sys.argv) != 4:
+        print(
+            "usage: python/plot_auxgrid.py "
+            "<input.json> <output.pdf> <plot-style>",
+            file=sys.stderr,
+        )
         return 1
 
     input_json = sys.argv[1]
     output_pdf = sys.argv[2]
+    plot_style = sys.argv[3]
+
+    if plot_style not in {"boundary", "heatmap"}:
+        print(f"unknown plot style: {plot_style}", file=sys.stderr)
+        return 1
 
     with open(input_json, encoding="utf-8") as handle:
         data = json.load(handle)
@@ -160,29 +180,55 @@ def main() -> int:
                     "x_edges": x_edges,
                     "q2_edges": q2_edges,
                     "selected": weights > 0.0,
+                    "weights": weights.copy(),
                 }
             else:
                 grouped_support[style_key]["selected"] |= weights > 0.0
+                grouped_support[style_key]["weights"] += weights
 
         for style_key, support in grouped_support.items():
             x_edges = support["x_edges"]
             q2_edges = support["q2_edges"]
             selected = support["selected"]
-            mask = np.where(selected, 1.0, np.nan)
+            weights = support["weights"]
             color = grid_colors[style_key]
 
-            ax.pcolormesh(
-                x_edges,
-                q2_edges,
-                mask,
-                shading="flat",
-                cmap=plt.matplotlib.colors.ListedColormap([color]),
-                vmin=0.0,
-                vmax=1.0,
-                edgecolors=(0.0, 0.0, 0.0, 1.0),
-                linewidth=0.15,
-                alpha=0.55,
-            )
+            if plot_style == "boundary":
+                mask = np.where(selected, 1.0, np.nan)
+                ax.pcolormesh(
+                    x_edges,
+                    q2_edges,
+                    mask,
+                    shading="flat",
+                    cmap=plt.matplotlib.colors.ListedColormap([color]),
+                    vmin=0.0,
+                    vmax=1.0,
+                    edgecolors=(0.0, 0.0, 0.0, 1.0),
+                    linewidth=0.15,
+                    alpha=0.55,
+                )
+            else:
+                visible_weights = np.ma.masked_where(~selected, weights)
+                maximum = float(visible_weights.max())
+                gradient = single_color_map(color, style_key)
+                mesh = ax.pcolormesh(
+                    x_edges,
+                    q2_edges,
+                    visible_weights,
+                    shading="flat",
+                    cmap=gradient,
+                    vmin=0.0,
+                    vmax=maximum,
+                    edgecolors=(0.0, 0.0, 0.0, 0.35),
+                    linewidth=0.15,
+                )
+                colorbar = fig.colorbar(mesh, ax=ax, pad=0.02)
+                # Add label later when we add plotting mode
+                # colorbar.set_label( 
+                #     f"{legend_handles[style_key].get_label()} weight",
+                #     fontsize=11,
+                # )
+                colorbar.ax.tick_params(labelsize=10)
 
             boundary = support_boundary_segments(
                 x_edges,

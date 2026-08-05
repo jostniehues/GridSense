@@ -37,7 +37,7 @@ experimental_data = "input/ttbar/Table_36.yaml"
 
 [grids.ttbar_cms_mttbar]
 path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec002.lz4"
-label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dm_{tt\bar{t}}}$'
+label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dm_{t\bar{t}}}$'
 experimental_data = "input/ttbar/Table_39.yaml"
 
 
@@ -50,25 +50,29 @@ path = "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.104
 label = 'Incjets CMS $\frac{d^2\sigma}{d p_T dy}, \mu = H_{T,parton}$'
 
 [grids.dijets]
-path = "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec000.lz4"
+path = "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec004.lz4"
 label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 
 
 
 [output]
-#process_grid = ["wm_atlas"]
+process_grid = ["dijets"]
 #process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms", "dijets", "wm_atlas", "wm_lhcb","wp_atlas", "wp_lhcb","ttbar_cms_yt"]
 #process_grid = ["z0_lhcb", "incjets_cms_pT", "wm_atlas"]
 #process_grid = ["z0_lhcb"]
-process_grid= ["ttbar_cms_yttbar"]
+#process_grid= ["ttbar_cms_yt", "ttbar_cms_yttbar", "ttbar_cms_mttbar"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/ttbar_yt_supp.pdf"
+path_plot = "output/plots/dijet_004.pdf"
+plot_style = "heatmap" # or boundary. Hetmap only adviced for single observables
+
 #[output.groups]
-"W Production" = ["wm_atlas", "wm_lhcb","wp_atlas","wp_lhcb"]
-"Z Produciton" = ["z0_atlas", "z0_lhcb"]
-"Jets" = ["dijets", "incjets_cms"]
+"TTbar" = ["ttbar_cms_yt", "ttbar_cms_yttbar", "ttbar_cms_mttbar"]
+#"W Production" = ["wm_atlas", "wm_lhcb","wp_atlas","wp_lhcb"]
+#"Z Produciton" = ["z0_atlas", "z0_lhcb"]
+#"Jets" = ["dijets", "incjets_cms"]
+
 
 
 #configuration of the grid that is plotted later (auxilary grid)
@@ -80,6 +84,11 @@ x_max = 1.0
 q2_min = 1000.0
 q2_max = 100000000.0
 threshold = 0.90
+#x_min = 0.001
+#x_max = 1.0
+#q2_min = 1000.0
+#q2_max = 100000.0
+
 
 [selection_conf]
 pdf = "CT18NNLO"

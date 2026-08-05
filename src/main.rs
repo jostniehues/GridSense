@@ -168,11 +168,12 @@ fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid]) -> Result<()> {
     }
 
     let status = Command::new("python3")
-        .arg("python/plot_auxgrid.py")
-        .arg(tmp_file.path())
-        .arg(plot_path)
-        .status()
-        .context("could not start python plotting script")?;
+    .arg("python/plot_auxgrid.py")
+    .arg(tmp_file.path())
+    .arg(plot_path)
+    .arg(config.plot_style())
+    .status()
+    .context("could not start python plotting script")?;
 
     if !status.success() {
         anyhow::bail!("python plotting script failed with status {status}");
