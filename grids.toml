@@ -57,15 +57,16 @@ label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 
 [output]
-process_grid = ["dijets"]
+#process_grid = ["dijets"]
 #process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms", "dijets", "wm_atlas", "wm_lhcb","wp_atlas", "wp_lhcb","ttbar_cms_yt"]
-#process_grid = ["z0_lhcb", "incjets_cms_pT", "wm_atlas"]
+process_grid = ["z0_lhcb", "incjets_cms_pT", "wm_atlas"]
 #process_grid = ["z0_lhcb"]
 #process_grid= ["ttbar_cms_yt", "ttbar_cms_yttbar", "ttbar_cms_mttbar"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/dijet_004.pdf"
-plot_style = "heatmap" # or boundary. Hetmap only adviced for single observables
+translation_ensemble = true # average over 27 translated auxiliary-grid partitions
+path_plot = "output/plots/subset_trans_test.pdf"
+plot_style = "boundary" # or boundary. Heatmap only adviced for single observables
 
 #[output.groups]
 "TTbar" = ["ttbar_cms_yt", "ttbar_cms_yttbar", "ttbar_cms_mttbar"]
@@ -77,17 +78,18 @@ plot_style = "heatmap" # or boundary. Hetmap only adviced for single observables
 
 #configuration of the grid that is plotted later (auxilary grid)
 [config]
-nx_x = 22
-nx_q2 = 15
+nx_x = 30
+nx_q2 = 25
 x_min = 0.0001
 x_max = 1.0
 q2_min = 1000.0
 q2_max = 100000000.0
 threshold = 0.90
-#x_min = 0.001
+#nx_x = 25
+#nx_q2 = 17
+#x_min = 0.0001
 #x_max = 1.0
-#q2_min = 1000.0
-#q2_max = 100000.0
+
 
 
 [selection_conf]
@@ -95,4 +97,3 @@ pdf = "CT18NNLO"
 #pdgs = [2] #use zero for gluon per default
 #pdgs = [0,1,2,3, -1,-2,-3]
 #max_as = 3 # We always take the highest a_ew order if available
-

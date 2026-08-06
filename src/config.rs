@@ -49,6 +49,9 @@ struct OutputConfig {
     detail: bool,
 
     #[serde(default)]
+    translation_ensemble: bool,
+
+    #[serde(default)]
     groups: HashMap<String, Vec<String>>,
 
     #[serde(default)]
@@ -100,6 +103,10 @@ impl GridConfig {
 
     pub fn detail(&self) -> bool {
         self.output.detail
+    }
+
+    pub fn translation_ensemble(&self) -> bool {
+        self.output.translation_ensemble
     }
 
     pub fn grids(&self) -> &[String] {

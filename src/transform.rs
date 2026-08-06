@@ -103,9 +103,9 @@ struct AuxGrid3D {
 }
 
 impl AuxGrid3D {
-    fn new(nx: usize, nq: usize) -> Self {
+    fn new(nx1: usize, nx2: usize, nq: usize) -> Self {
         Self {
-            weights: vec![vec![vec![0.0; nx]; nx]; nq],
+            weights: vec![vec![vec![0.0; nx2]; nx1]; nq],
         }
     }
 
@@ -123,6 +123,17 @@ impl AuxGrid3D {
     }
 }
 
+/// One translated three-dimensional partition and its conservative mappings
+/// back to the common reference grid.
+struct ShiftedGrid {
+    lx1_edges: Vec<f64>,
+    lx2_edges: Vec<f64>,
+    lq_edges: Vec<f64>,
+    x1_to_reference: Vec<Vec<(usize, f64)>>,
+    x2_to_reference: Vec<Vec<(usize, f64)>>,
+    q_to_reference: Vec<Vec<(usize, f64)>>,
+}
+
 fn logarithmic_edges(min: f64, max: f64, number_of_bins: usize) -> Vec<f64> {
     let log_min = min.log10();
     let log_max = max.log10();
@@ -132,23 +143,103 @@ fn logarithmic_edges(min: f64, max: f64, number_of_bins: usize) -> Vec<f64> {
         .collect()
 }
 
+/// Translate only the internal edges by a fraction of the uniform bin width.
+/// The outer phase-space limits remain fixed.
+fn shifted_internal_edges(reference_edges: &[f64], shift_fraction: f64) -> Vec<f64> {
+    let mut shifted = reference_edges.to_vec();
+
+    if reference_edges.len() < 3 || shift_fraction == 0.0 {
+        return shifted;
+    }
+
+    let bin_width = reference_edges[1] - reference_edges[0];
+    for edge in &mut shifted[1..reference_edges.len() - 1] {
+        *edge += shift_fraction * bin_width;
+    }
+
+    shifted
+}
+
+/// For each source cell, calculate the fractions overlapping the reference
+/// cells. The fractions of every source cell sum to one because both grids
+/// have the same fixed outer boundaries.
+fn overlap_fractions(
+    source_edges: &[f64],
+    reference_edges: &[f64],
+) -> Vec<Vec<(usize, f64)>> {
+    source_edges
+        .windows(2)
+        .map(|source| {
+            let source_width = source[1] - source[0];
+
+            reference_edges
+                .windows(2)
+                .enumerate()
+                .filter_map(|(index, reference)| {
+                    let overlap = source[1].min(reference[1])
+                        - source[0].max(reference[0]);
+
+                    (overlap > 0.0).then_some((index, overlap / source_width))
+                })
+                .collect()
+        })
+        .collect()
+}
+
+fn build_shifted_grids(
+    lx_edges: &[f64],
+    lq_edges: &[f64],
+    translation_ensemble: bool,
+) -> Vec<ShiftedGrid> {
+    let shifts: &[f64] = if translation_ensemble {
+        //&[-1.0 / 10.0, 0.0, 1.0 / 10.0]
+        &[-1.0 / 3.0, 0.0, 1.0 / 3.0]
+    } else {
+        &[0.0]
+    };
+    let mut grids = Vec::with_capacity(shifts.len().pow(3));
+
+    for &x1_shift in shifts {
+        for &x2_shift in shifts {
+            for &q_shift in shifts {
+                let lx1_edges = shifted_internal_edges(lx_edges, x1_shift);
+                let lx2_edges = shifted_internal_edges(lx_edges, x2_shift);
+                let shifted_lq_edges = shifted_internal_edges(lq_edges, q_shift);
+
+                grids.push(ShiftedGrid {
+                    x1_to_reference: overlap_fractions(&lx1_edges, lx_edges),
+                    x2_to_reference: overlap_fractions(&lx2_edges, lx_edges),
+                    q_to_reference: overlap_fractions(&shifted_lq_edges, lq_edges),
+                    lx1_edges,
+                    lx2_edges,
+                    lq_edges: shifted_lq_edges,
+                });
+            }
+        }
+    }
+
+    grids
+}
+
 /// Sort the kinematic contribution from a given bin in the auxilary 3D-grid cell
 fn accumulate_bin_in_3d(
     bin: &[KinematicsContribution],
-    lx_edges: &[f64],
+    lx1_edges: &[f64],
+    lx2_edges: &[f64],
     lq_edges: &[f64]
 ) -> AuxGrid3D {
-    let nx = lx_edges.len() - 1;
+    let nx1 = lx1_edges.len() - 1;
+    let nx2 = lx2_edges.len() - 1;
     let nq = lq_edges.len() - 1;
 
-    let mut cells = AuxGrid3D::new(nx, nq);
+    let mut cells = AuxGrid3D::new(nx1, nx2, nq);
 
     for point in bin {
-        let Some(ix1) = find_bin(point.x1.log10(), lx_edges) else {
+        let Some(ix1) = find_bin(point.x1.log10(), lx1_edges) else {
             continue;
         };
 
-        let Some(ix2) = find_bin(point.x2.log10(), lx_edges) else {
+        let Some(ix2) = find_bin(point.x2.log10(), lx2_edges) else {
             continue;
         };
 
@@ -162,8 +253,13 @@ fn accumulate_bin_in_3d(
     cells
 }
 
-/// Implementation of P_B
-fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
+/// Build P_B on the common reference grid from one translated partition.
+fn project_bin_to_reference_2d(
+    cells: &AuxGrid3D,
+    shifted_grid: &ShiftedGrid,
+    reference_nx: usize,
+    reference_nq: usize,
+) -> Option<Vec<Vec<f64>>> {
     // A_B = sum_u |C_{B,u}|
     let a_b = cells.absolute_sum();
 
@@ -172,17 +268,30 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
     }
 
     let nq = cells.weights.len();
-    let nx = cells.weights.first()?.len();
-
-    let mut projected = vec![vec![0.0; nx]; nq];
+    let nx1 = cells.weights.first()?.len();
+    let nx2 = cells.weights.first()?.first()?.len();
+    let mut projected = vec![vec![0.0; reference_nx]; reference_nq];
 
     for iq in 0..nq {
-        for ix1 in 0..nx {
-            for ix2 in 0..nx {
+        for ix1 in 0..nx1 {
+            for ix2 in 0..nx2 {
                 let normalized = cells.weights[iq][ix1][ix2].abs() / (2.0 * a_b);
 
-                projected[iq][ix1] += normalized;
-                projected[iq][ix2] += normalized;
+                for &(reference_iq, q_fraction) in &shifted_grid.q_to_reference[iq] {
+                    for &(reference_ix, x_fraction) in
+                        &shifted_grid.x1_to_reference[ix1]
+                    {
+                        projected[reference_iq][reference_ix] +=
+                            normalized * q_fraction * x_fraction;
+                    }
+
+                    for &(reference_ix, x_fraction) in
+                        &shifted_grid.x2_to_reference[ix2]
+                    {
+                        projected[reference_iq][reference_ix] +=
+                            normalized * q_fraction * x_fraction;
+                    }
+                }
             }
         }
     }
@@ -193,7 +302,8 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
 /// Calculate all single P_B,z. 
 pub(crate) fn build_per_bin_support_maps(
     contrib: &[Vec<KinematicsContribution>],
-    grid_spec: &GridSpec
+    grid_spec: &GridSpec,
+    translation_ensemble: bool,
 ) -> Result<BinSupportMaps, TransformError> {
     if
         grid_spec.nx_x == 0 ||
@@ -208,16 +318,51 @@ pub(crate) fn build_per_bin_support_maps(
 
     let lx_edges = logarithmic_edges(grid_spec.x_min, grid_spec.x_max, grid_spec.nx_x);
     let lq_edges = logarithmic_edges(grid_spec.q2_min, grid_spec.q2_max, grid_spec.nx_q2);
+    let shifted_grids = build_shifted_grids(
+        &lx_edges,
+        &lq_edges,
+        translation_ensemble,
+    );
     let mut weights = Vec::with_capacity(contrib.len());
 
     for bin in contrib {
-        let cells = accumulate_bin_in_3d(bin, &lx_edges, &lq_edges);
+        let mut averaged = vec![vec![0.0; grid_spec.nx_x]; grid_spec.nx_q2];
+        let mut included_shifts = 0usize;
 
-        let Some(projected) = project_bin_to_2d(&cells) else {
+        for shifted_grid in &shifted_grids {
+            let cells = accumulate_bin_in_3d(
+                bin,
+                &shifted_grid.lx1_edges,
+                &shifted_grid.lx2_edges,
+                &shifted_grid.lq_edges,
+            );
+
+            let Some(projected) = project_bin_to_reference_2d(
+                &cells,
+                shifted_grid,
+                grid_spec.nx_x,
+                grid_spec.nx_q2,
+            ) else {
+                continue;
+            };
+
+            included_shifts += 1;
+            for iq in 0..grid_spec.nx_q2 {
+                for ix in 0..grid_spec.nx_x {
+                    averaged[iq][ix] += projected[iq][ix];
+                }
+            }
+        }
+
+        if included_shifts == 0 {
             continue;
-        };
+        }
 
-        weights.push(projected);
+        for weight in averaged.iter_mut().flatten() {
+            *weight /= included_shifts as f64;
+        }
+
+        weights.push(averaged);
     }
 
     if weights.is_empty() {
@@ -322,4 +467,66 @@ pub fn ranked_cells(mut aux_grid: AuxGrid, threshold: f64) -> Result<AuxGrid, Tr
     }
 
     Ok(aux_grid)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn translated_edges_keep_outer_boundaries_fixed() {
+        let reference = vec![0.0, 1.0, 2.0, 3.0];
+        let shifted = shifted_internal_edges(&reference, 1.0 / 3.0);
+
+        assert_eq!(shifted[0], reference[0]);
+        assert_eq!(shifted[3], reference[3]);
+        assert!((shifted[1] - 4.0 / 3.0).abs() < 1.0e-12);
+        assert!((shifted[2] - 7.0 / 3.0).abs() < 1.0e-12);
+        assert!(shifted.windows(2).all(|edges| edges[0] < edges[1]));
+    }
+
+    #[test]
+    fn overlap_projection_is_conservative() {
+        let reference = vec![0.0, 1.0, 2.0, 3.0];
+        let shifted = shifted_internal_edges(&reference, 1.0 / 3.0);
+        let overlaps = overlap_fractions(&shifted, &reference);
+
+        for source_cell in overlaps {
+            let total: f64 = source_cell.iter().map(|(_, fraction)| fraction).sum();
+            assert!((total - 1.0).abs() < 1.0e-12);
+        }
+    }
+
+    #[test]
+    fn ensemble_contains_all_three_dimensional_translations() {
+        let x_edges = vec![-2.0, -1.0, 0.0];
+        let q_edges = vec![2.0, 3.0, 4.0];
+
+        assert_eq!(build_shifted_grids(&x_edges, &q_edges, false).len(), 1);
+        assert_eq!(build_shifted_grids(&x_edges, &q_edges, true).len(), 27);
+    }
+
+    #[test]
+    fn every_reprojected_support_map_remains_normalized() {
+        let x_edges = vec![-2.0, -1.0, 0.0];
+        let q_edges = vec![2.0, 3.0, 4.0];
+
+        for shifted_grid in build_shifted_grids(&x_edges, &q_edges, true) {
+            let mut cells = AuxGrid3D::new(2, 2, 2);
+            cells.add(0, 0, 1, 2.0);
+            cells.add(1, 1, 0, -1.0);
+
+            let projected = project_bin_to_reference_2d(
+                &cells,
+                &shifted_grid,
+                2,
+                2,
+            )
+            .unwrap();
+            let total: f64 = projected.iter().flatten().sum();
+
+            assert!((total - 1.0).abs() < 1.0e-12);
+            assert!(projected.iter().flatten().all(|weight| *weight >= 0.0));
+        }
+    }
 }

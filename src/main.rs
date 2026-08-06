@@ -71,7 +71,11 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
     // Build the normalized support map from the three-dimensional auxiliary binning.
     let grid_spec = config.grid_spec();
 
-    let per_bin_support = build_per_bin_support_maps(&kinematics, &grid_spec)?;
+    let per_bin_support = build_per_bin_support_maps(
+        &kinematics,
+        &grid_spec,
+        config.translation_ensemble(),
+    )?;
 
     let support_grid = average_support_maps(per_bin_support);
 
@@ -116,7 +120,11 @@ fn process_sensitivity_grid(
 
     let kinematics = extract_kinematics(&grid, selection, config.pdf())?;
 
-    let support = build_per_bin_support_maps(&kinematics, &config.grid_spec())?;
+    let support = build_per_bin_support_maps(
+        &kinematics,
+        &config.grid_spec(),
+        config.translation_ensemble(),
+    )?;
 
     let experimental_data = read_experimental_data(experimental_path)?;
 
