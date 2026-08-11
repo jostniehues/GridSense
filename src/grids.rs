@@ -4,10 +4,19 @@ use anyhow::{ Context, Ok, Result };
 use lhapdf::Pdf;
 use pineappl::{
     convolutions::{ Conv, ConvType, ConvolutionCache },
-    grid::{ Grid, KinematicsContribution },
+    grid::{ Grid, KinematicsContribution, PdgFilter },
 };
 use crate::config::Selection;
 use pineappl::evolution::gluon_has_pid_zero;
+
+//some grids may use 0 or 21 for gluon pdg
+fn translate_pdg(grid: &Grid, pdg: i32) -> i32 {
+    match pdg {
+        0 if gluon_has_pid_zero(grid) => 0,
+        0 => 21,
+        other => other,
+    }
+}
 
 pub fn extract_kinematics(
     grid: &Grid,
@@ -33,19 +42,27 @@ pub fn extract_kinematics(
     );
 
     let order_mask = build_order_mask(grid, selection);
+    let channel_mask = build_channel_mask(grid, selection)?;
 
-    //some grids may use 0 or 21 for gluon pdg
-    let pdg = match selection.pdg() {
-        Some(0) if gluon_has_pid_zero(grid) => Some(0),
-        Some(0) => Some(21),
-        other => other,
+    let pdg_filter = if let Some(pdg) = selection.pdg() {
+        PdgFilter::InitialState(translate_pdg(grid, pdg))
+    } else if let Some(pdgs) = selection.leg_pdgs() {
+        PdgFilter::MatchingLegs(
+            pdgs
+                .iter()
+                .copied()
+                .map(|pdg| translate_pdg(grid, pdg))
+                .collect()
+        )
+    } else {
+        PdgFilter::None
     };
 
     let regular_conv = grid.convolve(
         &mut convolution_cache,
         &order_mask,
         &[],
-        &[],
+        &channel_mask,
         &[(1.0, 1.0, 1.0)]
     );
 
@@ -53,16 +70,41 @@ pub fn extract_kinematics(
         &mut convolution_cache,
         &order_mask,
         &[],
-        &[],
+        &channel_mask,
         &[(1.0, 1.0, 1.0)],
-        pdg
+        &pdg_filter
     );
 
-    if pdg.is_none() {
+    //closure test
+    if matches!(pdg_filter, PdgFilter::None) {
         check_convolution_closure(&regular_conv, &contributions)?;
     }
 
     Ok(contributions)
+}
+
+/// Build a mask for the zero-based PineAPPL channel indices selected in the
+/// configuration. An empty mask means that PineAPPL uses all channels.
+fn build_channel_mask(grid: &Grid, selection: &Selection) -> Result<Vec<bool>> {
+    let Some(channels) = selection.channels() else {
+        return Ok(Vec::new());
+    };
+
+    let number_of_channels = grid.channels().len();
+    let mut mask = vec![false; number_of_channels];
+
+    for &channel in channels {
+        if channel >= number_of_channels {
+            anyhow::bail!(
+                "channel index {channel} is out of range for a grid with {number_of_channels} channels (valid indices: 0..{})",
+                number_of_channels.saturating_sub(1)
+            );
+        }
+
+        mask[channel] = true;
+    }
+
+    Ok(mask)
 }
 
 /// Build a order mask matching the condition in selection since different bins have different available order.
@@ -91,7 +133,6 @@ fn check_convolution_closure(
     const REL_TOLERANCE: f64 = 1.0e-8;
     const ABS_TOLERANCE: f64 = 1.0e-12;
 
-   
     for (bin_index, (expected, bin)) in regular.iter().zip(node_contrib).enumerate() {
         let reconstructed: f64 = bin
             .iter()

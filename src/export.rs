@@ -8,7 +8,7 @@ use serde::Serialize;
 use serde_json::to_writer;
 use tempfile::NamedTempFile;
 
-use crate::transform::{ AuxGrid, SummedContribution, XVar };
+use crate::transform::{ AuxGrid, BinSupportMaps, SummedContribution, XVar };
 
 #[derive(Serialize)]
 pub struct PlotDataset<'a> {
@@ -50,6 +50,53 @@ pub fn write_q2xcontrib_csv(
     writer
         .flush()
         .with_context(|| format!("could not flush writer for '{}'", file_path.display()))?;
+
+    Ok(file_path.to_path_buf())
+}
+
+/// Write every unranked P_B,z cell using the internal logarithmic grid edges.
+pub(crate) fn write_bin_support_maps_csv(
+    support: &BinSupportMaps,
+    file_path: &Path,
+) -> Result<PathBuf> {
+    if let Some(parent) = file_path.parent() {
+        fs::create_dir_all(parent).with_context(|| {
+            format!("could not create output directory '{}'", parent.display())
+        })?;
+    }
+
+    let file = File::create(file_path).with_context(|| {
+        format!("could not create support-map file '{}'", file_path.display())
+    })?;
+    let mut writer = BufWriter::new(file);
+
+    writeln!(
+        writer,
+        "observable_bin,iq,ix,log10_q2_low,log10_q2_high,log10_x_low,log10_x_high,p_bz"
+    )?;
+
+    for (observable_bin, weights) in support.weights.iter().enumerate() {
+        for (iq, row) in weights.iter().enumerate() {
+            for (ix, weight) in row.iter().enumerate() {
+                writeln!(
+                    writer,
+                    "{},{},{},{},{},{},{},{}",
+                    observable_bin,
+                    iq,
+                    ix,
+                    support.lq_edges[iq],
+                    support.lq_edges[iq + 1],
+                    support.lx_edges[ix],
+                    support.lx_edges[ix + 1],
+                    weight,
+                )?;
+            }
+        }
+    }
+
+    writer.flush().with_context(|| {
+        format!("could not flush support-map file '{}'", file_path.display())
+    })?;
 
     Ok(file_path.to_path_buf())
 }

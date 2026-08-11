@@ -16,7 +16,12 @@ use grids::extract_kinematics;
 use std::path::Path;
 use std::process::Command;
 
-use export::{ write_auxgrids_tmp_json, write_q2xcontrib_csv, PlotDataset };
+use export::{
+    write_auxgrids_tmp_json,
+    write_bin_support_maps_csv,
+    write_q2xcontrib_csv,
+    PlotDataset,
+};
 use transform::{ average_support_maps, build_per_bin_support_maps, ranked_cells, sum_over_x };
 use sensitivity::{ calculate_sensitivity_map, read_experimental_data };
 
@@ -73,6 +78,11 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
 
     let per_bin_support = build_per_bin_support_maps(&kinematics, &grid_spec)?;
 
+    if config.detail() {
+        let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));
+        write_bin_support_maps_csv(&per_bin_support, &path)?;
+    }
+
     let support_grid = average_support_maps(per_bin_support);
 
     let ranked_grid = ranked_cells(support_grid, config.threshold())?;
@@ -117,6 +127,11 @@ fn process_sensitivity_grid(
     let kinematics = extract_kinematics(&grid, selection, config.pdf())?;
 
     let support = build_per_bin_support_maps(&kinematics, &config.grid_spec())?;
+
+    if config.detail() {
+        let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));
+        write_bin_support_maps_csv(&support, &path)?;
+    }
 
     let experimental_data = read_experimental_data(experimental_path)?;
 

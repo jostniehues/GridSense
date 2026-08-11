@@ -1,11 +1,11 @@
 //! Module to read the grids.toml file
 
-use std::collections::HashMap;
+use std::collections::{ BTreeSet, HashMap };
 use std::fs;
 use std::path::{ Path, PathBuf };
 
 use anyhow::{ Context, Result, anyhow };
-use serde::Deserialize;
+use serde::{ Deserialize, Deserializer, de };
 
 use crate::transform::GridSpec;
 
@@ -56,10 +56,83 @@ struct OutputConfig {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct SelectionConfig {
     pdgs: Option<Vec<i32>>,
+    #[serde(default)]
+    leg_pdgs: Option<Vec<i32>>,
     max_as: Option<u8>,
+    #[serde(default, deserialize_with = "deserialize_channels")]
+    channels: Option<Vec<usize>>,
     pdf: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum ChannelItem {
+    Index(usize),
+    Range(String),
+}
+
+fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D::Error>
+    where D: Deserializer<'de>
+{
+    let Some(items) = Option::<Vec<ChannelItem>>::deserialize(deserializer)? else {
+        return Ok(None);
+    };
+
+    if items.is_empty() {
+        return Err(
+            de::Error::custom("channels must not be empty; omit the field to select all channels")
+        );
+    }
+
+    let mut channels = BTreeSet::new();
+
+    for item in items {
+        match item {
+            ChannelItem::Index(index) => {
+                channels.insert(index);
+            }
+            ChannelItem::Range(value) => {
+                let value = value.trim();
+
+                if let Some((start, end)) = value.split_once('-') {
+                    let start = start
+                        .trim()
+                        .parse::<usize>()
+                        .map_err(|_| {
+                            de::Error::custom(format!("invalid channel range '{value}'"))
+                        })?;
+                    let end = end
+                        .trim()
+                        .parse::<usize>()
+                        .map_err(|_| {
+                            de::Error::custom(format!("invalid channel range '{value}'"))
+                        })?;
+
+                    if start > end {
+                        return Err(
+                            de::Error::custom(
+                                format!("channel range '{value}' has decreasing bounds")
+                            )
+                        );
+                    }
+
+                    channels.extend(start..=end);
+                } else {
+                    let index = value
+                        .parse::<usize>()
+                        .map_err(|_| {
+                            de::Error::custom(format!("invalid channel index '{value}'"))
+                        })?;
+                    channels.insert(index);
+                }
+            }
+        }
+    }
+
+    Ok(Some(channels.into_iter().collect()))
 }
 #[derive(Debug, Deserialize)]
 struct GridEntry {
@@ -68,10 +141,12 @@ struct GridEntry {
     experimental_data: Option<PathBuf>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Selection {
     pdg: Option<i32>,
     max_as: Option<u8>,
+    leg_pdgs: Option<Vec<i32>>,
+    channels: Option<Vec<usize>>,
 }
 
 /// Getter functions
@@ -173,15 +248,44 @@ impl SelectionConfig {
                     .copied()
                     .map(|pdg| Selection {
                         pdg: Some(pdg),
+                        leg_pdgs: None,
                         max_as: self.max_as,
+                        channels: None,
                     })
                     .collect(),
+
             _ =>
                 vec![Selection {
                     pdg: None,
+                    leg_pdgs: self.leg_pdgs.clone(),
                     max_as: self.max_as,
+                    channels: self.channels.clone(),
                 }],
         }
+    }
+
+    fn validate(&self) -> Result<()> {
+        if self.pdgs.as_ref().is_some_and(Vec::is_empty) {
+            anyhow::bail!("selection_conf.pdgs must not be empty; omit the field instead");
+        }
+
+        if self.leg_pdgs.as_ref().is_some_and(Vec::is_empty) {
+            anyhow::bail!("selection_conf.leg_pdgs must not be empty; omit the field instead");
+        }
+
+        if self.pdgs.is_some() && self.channels.is_some() {
+            anyhow::bail!(
+                "selection_conf.pdgs and selection_conf.channels cannot be used together"
+            );
+        }
+
+        if self.pdgs.is_some() && self.leg_pdgs.is_some() {
+            anyhow::bail!(
+                "selection_conf.pdgs and selection_conf.leg_pdgs cannot be used together"
+            );
+        }
+
+        Ok(())
     }
 }
 
@@ -212,6 +316,13 @@ impl Selection {
     pub fn max_as(&self) -> Option<u8> {
         self.max_as
     }
+
+    pub fn channels(&self) -> Option<&[usize]> {
+        self.channels.as_deref()
+    }
+    pub fn leg_pdgs(&self) -> Option<&[i32]> {
+        self.leg_pdgs.as_deref()
+    }
 }
 
 /// Reads and parses the TOML configuration.
@@ -224,6 +335,8 @@ pub fn read_config(config_path: &Path) -> Result<GridConfig> {
         ::from_str(&raw_config)
         .with_context(|| format!("could not parse config file '{}'", config_path.display()))?;
 
+    // add central method later when there are more validation steps
+    config.selection_conf.validate()?;
     config.validate_groups()?;
 
     Ok(config)
@@ -239,4 +352,32 @@ pub fn resolve_grid_path(config: &GridConfig, grid_name: &str) -> Result<PathBuf
 
     Ok(config.path_to_grids.join(&file_name.path))
 }
-// ToDo: check for correct channel masks & bins.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_channel_indices_and_ranges() {
+        let config: SelectionConfig = toml
+            ::from_str(r#"
+pdf = "CT18NNLO"
+channels = ["1-5", 8, 11]
+"#)
+            .unwrap();
+
+        assert_eq!(config.channels, Some(vec![1, 2, 3, 4, 5, 8, 11]));
+    }
+
+    #[test]
+    fn rejects_decreasing_channel_ranges() {
+        let error = toml
+            ::from_str::<SelectionConfig>(r#"
+pdf = "CT18NNLO"
+channels = ["5-1"]
+"#)
+            .unwrap_err();
+
+        assert!(error.to_string().contains("decreasing bounds"));
+    }
+}

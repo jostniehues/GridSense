@@ -10,7 +10,7 @@ import numpy as np
 
 def pdg_title(pdg):
     if pdg is None:
-        return "All Channels"
+        return None
     pdg_dic = {
     0: "Gluon" ,   
     1: "Down-Quark",
@@ -223,11 +223,7 @@ def main() -> int:
                     linewidth=0.15,
                 )
                 colorbar = fig.colorbar(mesh, ax=ax, pad=0.02)
-                # Add label later when we add plotting mode
-                # colorbar.set_label( 
-                #     f"{legend_handles[style_key].get_label()} weight",
-                #     fontsize=11,
-                # )
+                colorbar.set_label(r"$W_z$", fontsize=13)
                 colorbar.ax.tick_params(labelsize=10)
 
             boundary = support_boundary_segments(
@@ -249,7 +245,9 @@ def main() -> int:
 
         ax.set_xscale("log")
         ax.set_yscale("log")
-        ax.set_title(pdg_title(pdg), fontsize=16)
+        title = pdg_title(pdg)
+        if title is not None:
+            ax.set_title(title, fontsize=16)
         ax.set_xlabel(r"$x$", fontsize=18)
         ax.tick_params(axis="both", which="major", labelsize=13, width=1.0, length=6)
         ax.minorticks_off()

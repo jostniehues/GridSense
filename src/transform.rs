@@ -5,6 +5,9 @@ use serde::Serialize;
 use thiserror::Error;
 use pineappl::grid::KinematicsContribution;
 
+const LEG_1: u8 = 0b01;
+const LEG_2: u8 = 0b10;
+const BOTH_LEGS: u8 = LEG_1 | LEG_2;
 /// Contribution after summing over one of the momentum fractions.
 #[derive(Clone, Debug)]
 pub struct SummedContribution {
@@ -99,23 +102,24 @@ pub(crate) struct BinSupportMaps {
 /// Signed contributions C_{B,u} for one observable bin.
 /// Index order: weights[iq][ix1][ix2]
 struct AuxGrid3D {
-    weights: Vec<Vec<Vec<f64>>>,
+    weights: Vec<Vec<Vec<[f64; 4]>>>,
 }
 
 impl AuxGrid3D {
     fn new(nx: usize, nq: usize) -> Self {
         Self {
-            weights: vec![vec![vec![0.0; nx]; nx]; nq],
+            weights: vec![vec![vec![[0.0; 4]; nx]; nx]; nq],
         }
     }
 
-    fn add(&mut self, iq: usize, ix1: usize, ix2: usize, value: f64) {
-        self.weights[iq][ix1][ix2] += value;
+    fn add(&mut self, iq: usize, ix1: usize, ix2: usize, leg_mask: u8, value: f64) {
+        self.weights[iq][ix1][ix2][usize::from(leg_mask)] += value;
     }
 
     fn absolute_sum(&self) -> f64 {
         self.weights
             .iter()
+            .flatten()
             .flatten()
             .flatten()
             .map(|value| value.abs())
@@ -156,7 +160,7 @@ fn accumulate_bin_in_3d(
             continue;
         };
 
-        cells.add(iq, ix1, ix2, point.value);
+        cells.add(iq, ix1, ix2, point.leg_mask, point.value);
     }
 
     cells
@@ -179,10 +183,20 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
     for iq in 0..nq {
         for ix1 in 0..nx {
             for ix2 in 0..nx {
-                let normalized = cells.weights[iq][ix1][ix2].abs() / (2.0 * a_b);
+                for leg_mask in [LEG_1, LEG_2, BOTH_LEGS] {
+                    let value = cells.weights[iq][ix1][ix2][usize::from(leg_mask)].abs();
 
-                projected[iq][ix1] += normalized;
-                projected[iq][ix2] += normalized;
+                    let number_of_legs = leg_mask.count_ones() as f64;
+                    let normalized = value / (a_b * number_of_legs);
+
+                    if (leg_mask & LEG_1) != 0 {
+                        projected[iq][ix1] += normalized;
+                    }
+
+                    if (leg_mask & LEG_2) != 0 {
+                        projected[iq][ix2] += normalized;
+                    }
+                }
             }
         }
     }
@@ -190,7 +204,7 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
     Some(projected)
 }
 
-/// Calculate all single P_B,z. 
+/// Calculate all single P_B,z.
 pub(crate) fn build_per_bin_support_maps(
     contrib: &[Vec<KinematicsContribution>],
     grid_spec: &GridSpec
@@ -232,13 +246,10 @@ pub(crate) fn build_per_bin_support_maps(
 }
 
 /// Build W_Z = 1/N_B sum_B P_B,z
-pub fn average_support_maps(
-    bin_support: BinSupportMaps
-) -> AuxGrid {
+pub fn average_support_maps(bin_support: BinSupportMaps) -> AuxGrid {
     let nx = bin_support.lx_edges.len() - 1;
     let nq = bin_support.lq_edges.len() - 1;
-    let mut combined =
-        vec![
+    let mut combined = vec![
             vec![0.0; nx];
             nq
         ];
