@@ -1,0 +1,49 @@
+# LHCb W+ differential measurement, arXiv:1505.07024, sqrt(s) = 7 TeV.
+# The W+ block of HEPData Table 10 is used; all correlations to W- are excluded.
+# The luminosity and beam-energy uncertainties are intentionally excluded.
+observable:
+  name: "dsigma/deta_mu(W+)"
+  unit: "pb"
+
+bins:
+  - id: 0
+    ranges: { "eta_mu": { low: 2, high: 2.25 } }
+    value: 192.2
+  - id: 1
+    ranges: { "eta_mu": { low: 2.25, high: 2.5 } }
+    value: 178.8
+  - id: 2
+    ranges: { "eta_mu": { low: 2.5, high: 2.75 } }
+    value: 154.3
+  - id: 3
+    ranges: { "eta_mu": { low: 2.75, high: 3 } }
+    value: 122.8
+  - id: 4
+    ranges: { "eta_mu": { low: 3, high: 3.25 } }
+    value: 94.3
+  - id: 5
+    ranges: { "eta_mu": { low: 3.25, high: 3.5 } }
+    value: 61.6
+  - id: 6
+    ranges: { "eta_mu": { low: 3.5, high: 4 } }
+    value: 60
+  - id: 7
+    ranges: { "eta_mu": { low: 4, high: 4.5 } }
+    value: 14.3
+
+uncertainties:
+  - name: "stat+sys"
+    kind: "correlated"
+    unit: "absolute"
+    per_bin: [3.7, 3.22800247831, 2.24722050542, 1.74642491966, 1.43178210633, 1.0295630141, 0.860232526704, 0.565685424949]
+    correlation_matrix:
+      - [1, -0.15, -0.03, 0.2, -0.03, -0.12, 0.02, -0.01]
+      - [-0.15, 1, 0.27, -0.1, 0.28, 0.36, 0.18, 0.17]
+      - [-0.03, 0.27, 1, 0, 0.2, 0.22, 0.15, 0.14]
+      - [0.2, -0.1, 0, 1, -0.01, -0.07, 0.04, -0.01]
+      - [-0.03, 0.28, 0.2, -0.01, 1, 0.24, 0.14, 0.11]
+      - [-0.12, 0.36, 0.22, -0.07, 0.24, 1, 0.15, 0.11]
+      - [0.02, 0.18, 0.15, 0.04, 0.14, 0.15, 1, 0.09]
+      - [-0.01, 0.17, 0.14, -0.01, 0.11, 0.11, 0.09, 1]
+
+grid_to_dat_norm: null

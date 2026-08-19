@@ -1,0 +1,704 @@
+# ATLAS W+ lepton-pseudorapidity measurement, arXiv:1612.03016, sqrt(s) = 7 TeV.
+# Relative uncertainties converted from percent values in wplus.dat.
+# The 1.8% AtlasLumi2011 normalization uncertainty is intentionally excluded.
+observable:
+  name: "dsigma/d|eta_l|(W+)"
+  unit: "pb"
+
+bins:
+  - id: 0
+    ranges: { "|eta_l|": { low: 0, high: 0.21 } }
+    value: 577.15
+  - id: 1
+    ranges: { "|eta_l|": { low: 0.21, high: 0.42 } }
+    value: 576.87
+  - id: 2
+    ranges: { "|eta_l|": { low: 0.42, high: 0.63 } }
+    value: 581.75
+  - id: 3
+    ranges: { "|eta_l|": { low: 0.63, high: 0.84 } }
+    value: 586.07
+  - id: 4
+    ranges: { "|eta_l|": { low: 0.84, high: 1.05 } }
+    value: 586.33
+  - id: 5
+    ranges: { "|eta_l|": { low: 1.05, high: 1.37 } }
+    value: 599.07
+  - id: 6
+    ranges: { "|eta_l|": { low: 1.37, high: 1.52 } }
+    value: 596.75
+  - id: 7
+    ranges: { "|eta_l|": { low: 1.52, high: 1.74 } }
+    value: 604.17
+  - id: 8
+    ranges: { "|eta_l|": { low: 1.74, high: 1.95 } }
+    value: 606.93
+  - id: 9
+    ranges: { "|eta_l|": { low: 1.95, high: 2.18 } }
+    value: 593.4
+  - id: 10
+    ranges: { "|eta_l|": { low: 2.18, high: 2.5 } }
+    value: 558.46
+
+uncertainties:
+  - name: "stat"
+    kind: "uncorrelated"
+    unit: "relative"
+    per_bin: [0.0010853, 0.0010764, 0.00091899, 0.0009984, 0.0010333, 0.00077921, 0.0013326, 0.0010542, 0.0011532, 0.0011304, 0.0011766]
+
+  - name: "uncor"
+    kind: "uncorrelated"
+    unit: "relative"
+    per_bin: [0.0013184, 0.0014658, 0.0012364, 0.0011485, 0.0014454, 0.0012802, 0.0032694, 0.0012979, 0.0017657, 0.0014405, 0.0014471]
+
+  - name: "sysATLAS1001"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00022, -0.00016, -0.00037, -7e-05, 4e-05, 0.00019, -0.00024, -6e-05, -1e-05, -4e-05, 0]
+
+  - name: "sysATLAS1002"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [1e-05, 2e-05, 4e-05, 9e-05, 0.00013, 0.00023, 0.00052, 0.00014, 0.00011, 6e-05, 7e-05]
+
+  - name: "sysATLAS1003"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [1e-05, 2e-05, 3e-05, 4e-05, 5e-05, 9e-05, 0.00019, 4e-05, 3e-05, 0, 0]
+
+  - name: "sysATLAS1004"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 1e-05, -1e-05, 1e-05, 1e-05, 1e-05, -9e-05, -1e-05, 1e-05, -1e-05, 0]
+
+  - name: "sysATLAS1005"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-1e-05, 0, 2e-05, 1e-05, 1e-05, -1e-05, -5e-05, -2e-05, 2e-05, -3e-05, -2e-05]
+
+  - name: "sysATLAS1006"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [5e-05, 5e-05, 0.00013, 0.0001, 0.00012, 0.00023, 0.00068, 0.00018, 0.0001, 5e-05, 4e-05]
+
+  - name: "sysATLAS1007"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00012, -0.00012, -0.00022, -0.00015, -0.00016, -0.00021, -0.00058, -0.00016, -9e-05, -5e-05, -5e-05]
+
+  - name: "sysATLAS1008"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00142, 0.00116, 0.00135, 0.0013, 0.00153, 0.00122, 0.00127, 0.00129, 0.00125, 0.00131, 0.00175]
+
+  - name: "sysATLAS1009"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00285, 0.00258, 0.00227, 0.00207, 0.00189, 0.00168, 0.00184, 0.00159, 0.00148, 0.00143, 0.00142]
+
+  - name: "sysATLAS1010"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00048, -1e-05, -0.00045, -0.00084, -0.00117, -0.00146, -0.00086, -0.0017, -0.00185, -0.00193, -0.00187]
+
+  - name: "sysATLAS1011"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [5e-05, -8e-05, -0.00018, -0.00026, -0.00031, -0.00039, -0.00032, -0.00045, -0.00048, -0.00048, -0.00043]
+
+  - name: "sysATLAS1012"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00035, 0.00034, 0.00033, 0.00031, 0.00028, 0.00024, 0.00019, 0.00017, 0.00013, 0.0001, 7e-05]
+
+  - name: "sysATLAS1013"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1014"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00114, 0.00115, 0.00114, 0.00113, 0.00113, 0.00111, 0.00113, 0.00112, 0.00105, 0.00105, 0.00105]
+
+  - name: "sysATLAS1015"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [9e-05, 9e-05, 9e-05, 9e-05, 8e-05, 8e-05, 8e-05, 8e-05, 7e-05, 7e-05, 6e-05]
+
+  - name: "sysATLAS1016"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [3e-05, 3e-05, 3e-05, 3e-05, 3e-05, 3e-05, 3e-05, 3e-05, 2e-05, 2e-05, 2e-05]
+
+  - name: "sysATLAS1017"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [7e-05, 7e-05, 6e-05, 7e-05, 6e-05, 6e-05, 6e-05, 5e-05, 5e-05, 4e-05, 4e-05]
+
+  - name: "sysATLAS1018"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00021, 0.0002, 0.00018, 0.00017, 0.00016, 0.00013, 0.0001, 9e-05, 7e-05, 5e-05, 3e-05]
+
+  - name: "sysATLAS1019"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00012, 0.00011, 0.00011, 0.00011, 0.00011, 0.0001, 0.00011, 0.0001, 9e-05, 9e-05, 9e-05]
+
+  - name: "sysATLAS1020"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00045, -0.00014, -4e-05, -4e-05, -1e-05, 2e-05, 8e-05, 7e-05, 8e-05, 8e-05, 6e-05]
+
+  - name: "sysATLAS1021"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-2e-05, -2e-05, -3e-05, -1e-05, -1e-05, 1e-05, -4e-05, -4e-05, -4e-05, -4e-05, -3e-05]
+
+  - name: "sysATLAS1022"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-4e-05, -2e-05, 0, -1e-05, 1e-05, 0.00026, -0.00014, 2e-05, 3e-05, 5e-05, 4e-05]
+
+  - name: "sysATLAS1023"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-5e-05, -4e-05, -4e-05, -4e-05, -0.0002, 2e-05, 4e-05, -2e-05, -2e-05, -3e-05, -4e-05]
+
+  - name: "sysATLAS1024"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-1e-05, -1e-05, 0, -1e-05, -3e-05, -2e-05, -1e-05, -2e-05, -1e-05, 6e-05, -2e-05]
+
+  - name: "sysATLAS1025"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [9e-05, 7e-05, 6e-05, 4e-05, 3e-05, 3e-05, -2e-05, 0, 1e-05, -2e-05, -6e-05]
+
+  - name: "sysATLAS1026"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-8e-05, -5e-05, -7e-05, -3e-05, 2e-05, 3e-05, 0, 0, 0, 2e-05, -1e-05]
+
+  - name: "sysATLAS1027"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [7e-05, 6e-05, 5e-05, 1e-05, 0, -2e-05, 0.00013, -2e-05, -3e-05, -2e-05, -3e-05]
+
+  - name: "sysATLAS1028"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-7e-05, -7e-05, -3e-05, -2e-05, -1e-05, 0, 5e-05, 1e-05, 0.00011, 2e-05, 1e-05]
+
+  - name: "sysATLAS1029"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [1e-05, 4e-05, 3e-05, -1e-05, -1e-05, 0, 0.00045, -3e-05, -2e-05, -2e-05, -2e-05]
+
+  - name: "sysATLAS1030"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 7e-05, -7e-05, -3e-05, -1e-05, -1e-05, -0.00019, -2e-05, 1e-05, -2e-05, -1e-05]
+
+  - name: "sysATLAS1031"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-1e-05, -3e-05, 0, -0.00012, 0, -1e-05, 8e-05, -3e-05, -2e-05, -2e-05, -2e-05]
+
+  - name: "sysATLAS1032"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [4e-05, 5e-05, 0.00015, 2e-05, 2e-05, 2e-05, -0.00021, -2e-05, 2e-05, 1e-05, 2e-05]
+
+  - name: "sysATLAS1033"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [6e-05, 3e-05, 1e-05, 3e-05, 0, -1e-05, 6e-05, -0.00012, -3e-05, -4e-05, -3e-05]
+
+  - name: "sysATLAS1034"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [1e-05, 1e-05, 0, 2e-05, 2e-05, 3e-05, 4e-05, 0, 2e-05, 3e-05, 2e-05]
+
+  - name: "sysATLAS1035"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-4e-05, -4e-05, -5e-05, 0.00024, -0.00043, 0, -6e-05, -3e-05, -1e-05, -3e-05, -4e-05]
+
+  - name: "sysATLAS1036"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00012, 0.00017, 0.00018, 0.00054, 0.00044, 0.00015, -0.00014, 0.00015, 0.00018, 0.00021, 0.00021]
+
+  - name: "sysATLAS1037"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00055, 0.00015, 4e-05, 0.00015, 9e-05, -1e-05, 9e-05, -3e-05, -3e-05, -6e-05, -3e-05]
+
+  - name: "sysATLAS1038"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.0002, 2e-05, -0.00041, -0.00012, -0.00011, -0.00011, 5e-05, -8e-05, -4e-05, -8e-05, -4e-05]
+
+  - name: "sysATLAS1039"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [7e-05, 9e-05, 0.00036, 2e-05, 0, 2e-05, 6e-05, -3e-05, -4e-05, -1e-05, -1e-05]
+
+  - name: "sysATLAS1040"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00038, 0.00044, 0.00032, 0.00016, 0.00012, 2e-05, -0.00025, 1e-05, -2e-05, 2e-05, 0]
+
+  - name: "sysATLAS1041"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00025, 0.00026, 0.00011, 0.00015, 8e-05, 9e-05, 1e-05, 0.00012, 4e-05, 5e-05, 4e-05]
+
+  - name: "sysATLAS1042"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [5e-05, 3e-05, -1e-05, -1e-05, -5e-05, -5e-05, -0.0009, -3e-05, -0.00011, -0.00012, -0.00018]
+
+  - name: "sysATLAS1043"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00013, -0.00011, -0.00015, -0.0001, -8e-05, -5e-05, -0.00074, 2e-05, -0.00016, -9e-05, -9e-05]
+
+  - name: "sysATLAS1044"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [2e-05, 4e-05, -5e-05, 1e-05, -1e-05, 8e-05, 0.00105, 2e-05, -6e-05, 0, -0.00013]
+
+  - name: "sysATLAS1045"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00018, 0.00013, 0.0001, 4e-05, 0, -2e-05, 0.00055, -5e-05, -0.0002, -0.00021, -4e-05]
+
+  - name: "sysATLAS1046"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [4e-05, 2e-05, -2e-05, 3e-05, 2e-05, 8e-05, -7e-05, 2e-05, -0.00017, 0.0001, 6e-05]
+
+  - name: "sysATLAS1047"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [9e-05, 4e-05, -4e-05, -4e-05, -8e-05, -0.0004, 0.0003, -0.00025, -0.00021, -0.00019, -0.00021]
+
+  - name: "sysATLAS1048"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-8e-05, -5e-05, -3e-05, 0, 2e-05, -1e-05, -6e-05, 0.00023, 8e-05, 5e-05, 6e-05]
+
+  - name: "sysATLAS1049"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00019, 0.00015, 7e-05, 4e-05, 1e-05, 0.00013, -0.00019, -0.00026, -4e-05, -9e-05, -8e-05]
+
+  - name: "sysATLAS1050"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [2e-05, 5e-05, 1e-05, 3e-05, 6e-05, 6e-05, -8e-05, 9e-05, 5e-05, 4e-05, 7e-05]
+
+  - name: "sysATLAS1051"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.0003, 0.00029, 0.0003, 0.0003, 0.00031, 0.00028, 0.00026, 0.00029, 0.00029, 0.00029, -8e-05]
+
+  - name: "sysATLAS1052"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.0002, -0.00019, -0.00021, -0.00021, -0.00022, -0.0002, -0.00017, -0.00022, -0.00022, -0.00022, -0.00013]
+
+  - name: "sysATLAS1053"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-2e-05, 0, 1e-05, 2e-05, 3e-05, 4e-05, 3e-05, 4e-05, 5e-05, 5e-05, 5e-05]
+
+  - name: "sysATLAS1054"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00016, -0.00027, -0.00026, -0.00032, -0.00014, -0.00016, -4e-05, 0.00069, 6e-05, 9e-05, 0.00058]
+
+  - name: "sysATLAS1055"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00019, -0.00024, -0.00026, -0.00025, -0.00016, 0.00025, 0.00011, 0.0016, -5e-05, -0.0003, -0.00036]
+
+  - name: "sysATLAS1056"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00013, 5e-05, 9e-05, 0.00016, 0.00017, 0.00023, 8e-05, -4e-05, 0.00037, 0.00036, 0.00048]
+
+  - name: "sysATLAS1057"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00039, 0.0003, 0.00017, -0.00036, -0.00026, -0.00036, -3e-05, -0.00012, 0.00013, 0.00018, 0.00028]
+
+  - name: "sysATLAS1058"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [8e-05, -0.0002, 1e-05, 8e-05, -3e-05, 2e-05, -5e-05, -0.00022, -0.00023, -0.00042, 0.00039]
+
+  - name: "sysATLAS1059"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-2e-05, 2e-05, 5e-05, 7e-05, 0.0001, 0.00014, 0.00012, 0.00021, 0.00018, 0.00018, 0.00016]
+
+  - name: "sysATLAS1060"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [5e-05, -0.00019, -1e-05, 0.00018, 0.00022, 0.00021, 2e-05, 5e-05, -5e-05, -5e-05, 0.00014]
+
+  - name: "sysATLAS1061"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00032, 9e-05, 0.00029, 0.00026, 0.00013, -6e-05, 0.00014, 0.0001, 0.00033, 0.00028, 0.00078]
+
+  - name: "sysATLAS1062"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00031, 5e-05, 0.00016, 0.00035, 0.00042, -0.0005, 3e-05, -0.0002, 3e-05, 0.00056, 0.00038]
+
+  - name: "sysATLAS1063"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00018, -1e-05, -8e-05, -0.00015, -0.00025, 0.00028, -2e-05, -0.00083, -0.00021, 1e-05, 0.00072]
+
+  - name: "sysATLAS1064"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00022, 4e-05, -0.00012, -0.00027, -6e-05, -0.00014, 4e-05, -6e-05, -0.00014, 0.00035, 0.0006]
+
+  - name: "sysATLAS1065"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00018, 4e-05, -0.00017, 8e-05, 4e-05, 0, -4e-05, -0.00017, -0.00022, -5e-05, 0.0003]
+
+  - name: "sysATLAS1066"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [7e-05, 0.00029, 6e-05, 0.00039, 6e-05, 8e-05, 5e-05, 3e-05, -0.00019, 6e-05, 0.00046]
+
+  - name: "sysATLAS1067"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-7e-05, -0.00017, -0.00016, -0.00014, 2e-05, -0.00037, -0.0001, -0.00029, 6e-05, 0.0002, 3e-05]
+
+  - name: "sysATLAS1068"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-5e-05, -0.00043, -0.00066, -0.00017, -0.00029, -0.00043, -0.00017, -0.0006, 0.00171, 0.0006, -0.00032]
+
+  - name: "sysATLAS1069"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00019, -0.00013, -8e-05, -0.00019, -5e-05, -0.00011, -6e-05, 2e-05, -0.00014, 1e-05, 0.00086]
+
+  - name: "sysATLAS1070"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1071"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00023, 0.00026, 0.00039, 0.00049, 0.00033, 0.00035, 0.00043, 0.00052, 0.00037, 0.00076, 0.00109]
+
+  - name: "sysATLAS1072"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00014, 0.00019, 0.00034, 0.00047, 0.0003, 0.00027, 0.00013, 0.00013, 0.00039, -0.00035, -0.00107]
+
+  - name: "sysATLAS1073"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.0001, -5e-05, 7e-05, 0.00019, 0.00014, 0.00016, 1e-05, -0.0003, -0.00025, 0.00025, 0.00035]
+
+  - name: "sysATLAS1074"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00018, 1e-05, -3e-05, -0.00013, -2e-05, 1e-05, 1e-05, -0.0001, 0.00024, 0.00066, -0.00057]
+
+  - name: "sysATLAS1075"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.0008, -0.00013, -1e-05, 0.00041, 7e-05, 4e-05, -4e-05, -6e-05, -0.00026, 0.00037, -0.00025]
+
+  - name: "sysATLAS1076"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00042, -0.0001, -1e-05, 0.00019, 2e-05, 5e-05, -1e-05, -0.00011, 0.0005, -0.00068, 0.00019]
+
+  - name: "sysATLAS1077"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00023, -0.00013, -9e-05, -0.00057, 0.00026, 0.00062, 5e-05, -0.00012, 1e-05, -6e-05, -0.0001]
+
+  - name: "sysATLAS1078"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00026, -0.0004, -0.00059, 0.00032, 0.00035, 0.00011, -3e-05, -4e-05, -9e-05, -8e-05, 1e-05]
+
+  - name: "sysATLAS1079"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [6e-05, 0.0006, 0.00063, 0.00065, 0.00059, 0.00033, 0.00043, 0.00046, 0.00052, 0.00057, 0.00032]
+
+  - name: "sysATLAS1080"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00048, -9e-05, 2e-05, 0.00042, -0.0006, -0.00014, -8e-05, -0.0001, -0.00016, 0.00047, 0.00027]
+
+  - name: "sysATLAS1081"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00044, -0.0006, -0.00015, -4e-05, 0.00056, 0.00019, 2e-05, 6e-05, 0.00012, -0.00019, 0.00012]
+
+  - name: "sysATLAS1082"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-5e-05, 0, -0.00017, 6e-05, 0.00016, 0.00028, 2e-05, -5e-05, -0.00048, 0.00024, 0.00017]
+
+  - name: "sysATLAS1083"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00019, -2e-05, 7e-05, -0.00018, -5e-05, -4e-05, 3e-05, 5e-05, 3e-05, -0.00034, 0.00072]
+
+  - name: "sysATLAS1084"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00023, 0.00024, -2e-05, -0.00012, -0.00013, -0.00011, 3e-05, 0.00024, -0.00016, 0.00032, -0.00011]
+
+  - name: "sysATLAS1085"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00015, 5e-05, 0.00013, 0.00036, -0.00021, -0.00025, -4e-05, 0.0001, -1e-05, -0.00041, 3e-05]
+
+  - name: "sysATLAS1086"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00012, 0.00014, 0.00017, 0.00022, 0.00023, 0.00022, 0.00018, 0.00022, 0.00023, 0.00014, 1e-05]
+
+  - name: "sysATLAS1087"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [8e-05, 7e-05, 6e-05, 6e-05, 5e-05, 9e-05, 0.00011, 8e-05, 5e-05, 9e-05, 0.00015]
+
+  - name: "sysATLAS1088"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [9e-05, 6e-05, 4e-05, 2e-05, 2e-05, 1e-05, 4e-05, 5e-05, 8e-05, 4e-05, 0]
+
+  - name: "sysATLAS1089"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [3e-05, 2e-05, 1e-05, -1e-05, 1e-05, -1e-05, 0, -1e-05, 0, 0, 2e-05]
+
+  - name: "sysATLAS1090"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, -1e-05, -2e-05, -1e-05, -2e-05, -2e-05, -1e-05, -2e-05, -1e-05, 0, 0]
+
+  - name: "sysATLAS1091"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1092"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1093"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1094"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1095"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1096"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1097"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1098"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  - name: "sysATLAS1099"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00026, 0.00039, 0.00014, 5e-05, -0.00018, -0.00051, 0, 0.00046, 3e-05, 0.00011, -0.00026]
+
+  - name: "sysATLAS1100"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00025, -3e-05, -1e-05, 0.00012, -6e-05, 3e-05, 6e-05, 8e-05, 3e-05, -5e-05, -2e-05]
+
+  - name: "sysATLAS1101"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0, 6e-05, 1e-05, 8e-05, 0.00016, 5e-05, 0, 1e-05, 0.00014, -0.00031, -0.00017]
+
+  - name: "sysATLAS1102"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.0001, -6e-05, -5e-05, 7e-05, -8e-05, -4e-05, 0, -3e-05, 0.00023, 0, -0.00012]
+
+  - name: "sysATLAS1103"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-5e-05, -8e-05, -0.00015, -3e-05, 0, 5e-05, -1e-05, 0, 7e-05, -0.00032, 0.00024]
+
+  - name: "sysATLAS1104"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00012, -0.00016, -0.00016, 8e-05, 0.00015, 0.0001, -1e-05, -1e-05, -6e-05, 7e-05, -0.00019]
+
+  - name: "sysATLAS1105"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00016, 0.00015, 9e-05, -0.00026, -2e-05, 0.00013, 3e-05, 1e-05, 9e-05, -2e-05, -0.00011]
+
+  - name: "sysATLAS1106"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00046, 0.00011, -2e-05, -0.00013, -0.00033, -0.00017, -1e-05, 0.00032, -3e-05, -0.0001, 1e-05]
+
+  - name: "sysATLAS1107"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [5e-05, 5e-05, 0.0001, 0.00013, 0.00012, 0.00016, 6e-05, 0.0001, 9e-05, 6e-05, -0.00066]
+
+  - name: "sysATLAS1108"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [9e-05, -3e-05, 4e-05, -0.0001, -0.00013, -3e-05, 1e-05, -2e-05, 0.00026, 0.00013, -0.00018]
+
+  - name: "sysATLAS1109"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00035, -1e-05, -1e-05, 3e-05, 8e-05, -5e-05, -2e-05, 0, -7e-05, 9e-05, -7e-05]
+
+  - name: "sysATLAS1110"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00014, 1e-05, -2e-05, -3e-05, -3e-05, -2e-05, -1e-05, -2e-05, -0.00019, 0.00038, -8e-05]
+
+  - name: "sysATLAS1111"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [2e-05, -7e-05, -0.0001, 6e-05, 0.00015, -1e-05, -4e-05, -5e-05, 1e-05, -6e-05, -4e-05]
+
+  - name: "sysATLAS1112"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00199, -0.00196, -0.00201, -0.00205, -0.00203, -0.00211, -0.00213, -0.00216, -0.00174, -0.00179, -0.00182]
+
+  - name: "sysATLAS1113"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00034, -0.00041, -0.00035, -0.00061, -0.00016, -0.00026, -0.0002, -0.00033, -0.00024, -0.0003, -0.00017]
+
+  - name: "sysATLAS1114"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00087, -0.00086, -0.00084, -0.00087, -0.00089, -0.00091, -0.00073, -0.00093, -0.00084, -0.0006, -0.00027]
+
+  - name: "sysATLAS1115"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [6e-05, 0.00016, 5e-05, -0.00012, 0.00028, 0.00013, 9e-05, 0.00018, 6e-05, 0.00018, 0.00046]
+
+  - name: "sysATLAS1116"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00028, 4e-05, 3e-05, -0.0002, 5e-05, 6e-05, -0.00013, -0.00039, -0.00029, -1e-05, 0.00028]
+
+  - name: "sysATLAS1117"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00095, 0.00173, 0.0013, 0.00139, 0.00121, 0.0012, 0.00137, 0.0012, 0.00118, 0.00133, 0.00128]
+
+  - name: "sysATLAS1118"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [9e-05, 0.00016, 0.00023, 0.00017, 0.00015, 0.00031, 0.00019, 0.00042, 0.00043, 0.00043, 0.00041]
+
+  - name: "sysATLAS1119"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00115, 0.00111, 0.00116, 0.00114, 0.00121, 0.00122, 0.00143, 0.00132, 0.00114, 0.00103, 0.00109]
+
+  - name: "sysATLAS1120"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00111, 0.00103, 0.00107, 0.00126, 0.00138, 0.00149, 0.00178, 0.00195, 0.00222, 0.00214, 0.00216]
+
+  - name: "sysATLAS1121"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00125, 0.00117, 0.00107, 0.00115, 0.00111, 0.00124, 0.0014, 0.0012, 0.00112, 0.00093, 0.00106]
+
+  - name: "sysATLAS1122"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00026, -0.00023, -9e-05, -0.00026, -0.00015, 3e-05, 0.00023, -8e-05, 2e-05, -0.00016, 1e-05]
+
+  - name: "sysATLAS1123"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00096, -0.00055, -0.00076, -0.00085, -0.00034, -0.00071, -0.0006, -0.00085, -0.00122, -0.00102, -0.00121]
+
+  - name: "sysATLAS1124"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00018, 4e-05, 0.00021, 0.00038, 0.00034, 0.0007, 0.00029, 0.00042, 0.00042, -0.00039, 0.00028]
+
+  - name: "sysATLAS1125"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [4e-05, 8e-05, 0.00031, 0.00024, 0.0008, 0.00027, 0.00031, 0.00021, 0.00039, 0.00071, 0.00129]
+
+  - name: "sysATLAS1126"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-2e-05, 0, 1e-05, 2e-05, 2e-05, 5e-05, 6e-05, 6e-05, 7e-05, 9e-05, 0.0001]
+
+  - name: "sysATLAS1127"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [-0.00015, -0.00027, 0.00029, 0.00061, -0.00094, 0.00107, 0.00053, 0.0003, 0.00063, 0.00075, 0.00142]
+
+  - name: "sysATLAS1128"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [4e-05, 7e-05, -1e-05, 6e-05, 0.00035, -7e-05, 0.00014, 0.00022, 0.0002, 0.00021, 0.0003]
+
+  - name: "sysATLAS1129"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [4e-05, -0.00011, 0.00055, 8e-05, -0.00023, 0.00047, 0.00016, 6e-05, 0.0003, -5e-05, -0.00124]
+
+  - name: "sysATLAS1130"
+    kind: "correlated"
+    unit: "relative"
+    per_bin: [0.00071, 0.00032, 0.00079, 0.00051, -0.00038, -0.0005, -7e-05, -8e-05, 0.00013, 0.00031, -0.00066]
+
+grid_to_dat_norm: null

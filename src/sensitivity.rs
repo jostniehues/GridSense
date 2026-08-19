@@ -49,6 +49,8 @@ struct UncertaintySource {
     kind: UncertaintyKind,
     unit: UncertaintyUnit,
     per_bin: Vec<f64>,
+    #[serde(default)]
+    correlation_matrix: Option<Vec<Vec<f64>>>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
@@ -84,16 +86,16 @@ pub(crate) fn read_experimental_data(path: &Path) -> Result<ExperimentalData> {
         .with_context(|| format!("could not parse experimental data '{}'", path.display()))
 }
 
-/// Construct the covariance matrix from the uncertainty sources.
+/// Construct the covariance matrix of relative deviations.
 ///
-/// The first approximation accepts uncorrelated uncertainties and constructs
-/// the covariance of relative deviations. Absolute uncertainties are first
-/// divided by the experimental central value:
-/// `V_ii = sum_s (delta_(s,i) / D_i)^2`, `V_ij = 0` for `i != j`.
-/// Sources declared as relative are assumed to contain fractional values.
+/// Uncorrelated sources contribute only to the diagonal. Each correlated
+/// source is interpreted as one signed nuisance shift and contributes its
+/// outer product. Absolute shifts are divided by the experimental central
+/// values; relative shifts are assumed to be fractional values.
 fn construct_covariance(data: &ExperimentalData) -> Result<CovarianceMatrix> {
     let number_of_bins = data.bins.len();
     let mut covariance = DMatrix::zeros(number_of_bins, number_of_bins);
+    let ignore_correlations = true;
 
     for source in &data.uncertainties {
         if source.per_bin.len() != number_of_bins {
@@ -105,13 +107,18 @@ fn construct_covariance(data: &ExperimentalData) -> Result<CovarianceMatrix> {
             );
         }
 
-        if source.kind != UncertaintyKind::Uncorrelated {
-            bail!("uncertainty source '{}' is correlated, which is not supported yet", source.name);
-        }
+        let mut relative_shifts = Vec::with_capacity(number_of_bins);
 
         for (bin_index, uncertainty) in source.per_bin.iter().enumerate() {
-            if !uncertainty.is_finite() || *uncertainty < 0.0 {
+            if !uncertainty.is_finite() {
                 bail!("uncertainty source '{}' contains an invalid value", source.name);
+            }
+
+            if (source.kind == UncertaintyKind::Uncorrelated
+                || source.correlation_matrix.is_some())
+                && *uncertainty < 0.0
+            {
+                bail!("uncertainty source '{}' contains a negative uncertainty magnitude", source.name);
             }
 
             let relative_uncertainty = match source.unit {
@@ -130,11 +137,101 @@ fn construct_covariance(data: &ExperimentalData) -> Result<CovarianceMatrix> {
                 UncertaintyUnit::Relative => *uncertainty,
             };
 
-            covariance[(bin_index, bin_index)] += relative_uncertainty.powi(2);
+            relative_shifts.push(relative_uncertainty);
+        }
+
+        if ignore_correlations {
+            for (bin_index, uncertainty) in relative_shifts.iter().enumerate() {
+                covariance[(bin_index, bin_index)] += uncertainty.powi(2);
+            }
+            continue;
+        }
+
+        if let Some(correlation) = &source.correlation_matrix {
+            if source.kind != UncertaintyKind::Correlated {
+                bail!(
+                    "uncertainty source '{}' has a correlation matrix but is not declared correlated",
+                    source.name
+                );
+            }
+
+            validate_correlation_matrix(correlation, number_of_bins, &source.name)?;
+
+            for row in 0..number_of_bins {
+                for column in 0..number_of_bins {
+                    covariance[(row, column)] += correlation[row][column]
+                        * relative_shifts[row]
+                        * relative_shifts[column];
+                }
+            }
+
+            continue;
+        }
+
+        match source.kind {
+            UncertaintyKind::Uncorrelated => {
+                for (bin_index, uncertainty) in relative_shifts.iter().enumerate() {
+                    covariance[(bin_index, bin_index)] += uncertainty.powi(2);
+                }
+            }
+            UncertaintyKind::Correlated => {
+                for row in 0..number_of_bins {
+                    for column in 0..number_of_bins {
+                        covariance[(row, column)] +=
+                            relative_shifts[row] * relative_shifts[column];
+                    }
+                }
+            }
         }
     }
 
     Ok(covariance)
+}
+
+fn validate_correlation_matrix(
+    correlation: &[Vec<f64>],
+    number_of_bins: usize,
+    source_name: &str,
+) -> Result<()> {
+    if correlation.len() != number_of_bins
+        || correlation.iter().any(|row| row.len() != number_of_bins)
+    {
+        bail!(
+            "correlation matrix for source '{}' must be {}x{}",
+            source_name,
+            number_of_bins,
+            number_of_bins
+        );
+    }
+
+    for row in 0..number_of_bins {
+        for column in 0..number_of_bins {
+            let coefficient = correlation[row][column];
+
+            if !coefficient.is_finite() || !(-1.0..=1.0).contains(&coefficient) {
+                bail!(
+                    "correlation matrix for source '{}' contains an invalid coefficient",
+                    source_name
+                );
+            }
+
+            if (coefficient - correlation[column][row]).abs() > 1.0e-12 {
+                bail!(
+                    "correlation matrix for source '{}' is not symmetric",
+                    source_name
+                );
+            }
+        }
+
+        if (correlation[row][row] - 1.0).abs() > 1.0e-12 {
+            bail!(
+                "correlation matrix for source '{}' must have ones on its diagonal",
+                source_name
+            );
+        }
+    }
+
+    Ok(())
 }
 
 
@@ -270,6 +367,46 @@ mod tests {
         assert!((covariance[(0, 0)] - expected_first_diagonal).abs() < 1.0e-15);
         assert_eq!(covariance[(0, 1)], 0.0);
         assert_eq!(covariance[(9, 0)], 0.0);
+    }
+
+    #[test]
+    fn constructs_atlas_wplus_correlated_covariance_without_luminosity() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("input/wz/Wplus_atlas.yaml");
+        let data = read_experimental_data(&path).expect("Wplus data should be readable");
+        let covariance = construct_covariance(&data)
+            .expect("Wplus covariance should be constructible");
+
+        assert_eq!(data.bins.len(), 11);
+        assert_eq!(data.uncertainties.len(), 132);
+        assert!(data
+            .uncertainties
+            .iter()
+            .all(|source| source.name != "AtlasLumi2011"));
+        assert_eq!(covariance.nrows(), 11);
+        assert_eq!(covariance.ncols(), 11);
+        assert!((covariance[(0, 0)] - 3.015665465e-5).abs() < 1.0e-15);
+        assert!((covariance[(0, 1)] - 2.3209e-5).abs() < 1.0e-15);
+        assert!((covariance[(0, 1)] - covariance[(1, 0)]).abs() < 1.0e-15);
+
+        invert_covariance(&covariance).expect("Wplus covariance should be invertible");
+    }
+
+    #[test]
+    fn constructs_lhcb_wplus_covariance_without_global_systematics_or_wminus() {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("input/wz/Wplus_lhcb.yaml");
+        let data = read_experimental_data(&path).expect("LHCb Wplus data should be readable");
+        let covariance = construct_covariance(&data)
+            .expect("LHCb Wplus covariance should be constructible");
+
+        assert_eq!(data.bins.len(), 8);
+        assert_eq!(data.uncertainties.len(), 1);
+        assert_eq!(covariance.nrows(), 8);
+        assert_eq!(covariance.ncols(), 8);
+        assert!((covariance[(0, 0)] - 3.7059254743530476e-4).abs() < 1.0e-15);
+        assert!((covariance[(0, 1)] + 5.2132187047193924e-5).abs() < 1.0e-15);
+        assert!((covariance[(0, 1)] - covariance[(1, 0)]).abs() < 1.0e-15);
+
+        invert_covariance(&covariance).expect("LHCb Wplus covariance should be invertible");
     }
 
     #[test]

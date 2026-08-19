@@ -93,6 +93,17 @@ pub struct AuxGrid {
     pub weights: Vec<Vec<f64>>,
 }
 
+impl AuxGrid {
+    /// Add the cell weights of another auxiliary grid with the same binning.
+    pub fn merge(&mut self, other: Self) {
+        for (target_row, source_row) in self.weights.iter_mut().zip(other.weights) {
+            for (target_weight, source_weight) in target_row.iter_mut().zip(source_row) {
+                *target_weight += source_weight;
+            }
+        }
+    }
+}
+
 pub(crate) struct BinSupportMaps {
     pub(crate) lx_edges: Vec<f64>,
     pub(crate) lq_edges: Vec<f64>,

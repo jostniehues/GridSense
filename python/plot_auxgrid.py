@@ -77,10 +77,10 @@ def single_color_map(color, name):
 
 
 def main() -> int:
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print(
             "usage: python/plot_auxgrid.py "
-            "<input.json> <output.pdf> <plot-style>",
+            "<input.json> <output.pdf> <plot-style> <subtitle>",
             file=sys.stderr,
         )
         return 1
@@ -88,6 +88,7 @@ def main() -> int:
     input_json = sys.argv[1]
     output_pdf = sys.argv[2]
     plot_style = sys.argv[3]
+    subtitle = sys.argv[4]
 
     if plot_style not in {"boundary", "heatmap"}:
         print(f"unknown plot style: {plot_style}", file=sys.stderr)
@@ -143,10 +144,10 @@ def main() -> int:
             legend_handles[style_key] = Patch(
                 facecolor=grid_colors[style_key],
                 edgecolor=grid_colors[style_key],
-                linewidth=1.5,
+                linewidth=1.8,
                 linestyle=grid_linestyles[style_key],
                 label=style_label,
-                alpha=0.7,
+                alpha=0.55,
             )
 
         pdg_groups.setdefault(pdg, []).append(entry)
@@ -186,6 +187,29 @@ def main() -> int:
                 grouped_support[style_key]["selected"] |= weights > 0.0
                 grouped_support[style_key]["weights"] += weights
 
+        # Draw the complete auxiliary grid independently of the selected cells.
+        # It remains visible as orientation in the background, while the white
+        # mesh edges below keep overlapping process regions easy to distinguish.
+        reference_support = next(iter(grouped_support.values()))
+        grid_x_edges = reference_support["x_edges"]
+        grid_q2_edges = reference_support["q2_edges"]
+        ax.vlines(
+            grid_x_edges,
+            grid_q2_edges[0],
+            grid_q2_edges[-1],
+            colors=(0.15, 0.15, 0.15, 0.48),
+            linewidth=0.65,
+            zorder=0,
+        )
+        ax.hlines(
+            grid_q2_edges,
+            grid_x_edges[0],
+            grid_x_edges[-1],
+            colors=(0.15, 0.15, 0.15, 0.48),
+            linewidth=0.65,
+            zorder=0,
+        )
+
         for style_key, support in grouped_support.items():
             x_edges = support["x_edges"]
             q2_edges = support["q2_edges"]
@@ -203,9 +227,11 @@ def main() -> int:
                     cmap=plt.matplotlib.colors.ListedColormap([color]),
                     vmin=0.0,
                     vmax=1.0,
-                    edgecolors=(0.0, 0.0, 0.0, 1.0),
-                    linewidth=0.15,
-                    alpha=0.55,
+                    # Keep the auxiliary-grid resolution visible without letting
+                    # black cell edges dominate overlapping process regions.
+                    edgecolors=(1.0, 1.0, 1.0, 0.28),
+                    linewidth=0.25,
+                    alpha=0.38,
                 )
             else:
                 visible_weights = np.ma.masked_where(~selected, weights)
@@ -236,7 +262,7 @@ def main() -> int:
                     LineCollection(
                         boundary,
                         colors=[color],
-                        linewidths=2.5,
+                        linewidths=2.2,
                         linestyles=grid_linestyles[style_key],
                         alpha=0.95,
                         zorder=3,
@@ -258,15 +284,25 @@ def main() -> int:
     axes[0].set_ylabel(r"$\mu^2\;[\mathrm{GeV}^2]$", fontsize=18)
 
     title_as = as_title(max_as)
-    fig.suptitle(rf"$\mathtt{{GridSense}}$ Kinematic Support. {title_as}", fontsize=20,)
+    figure_title = rf"$\mathtt{{GridSense}}$ Kinematic Support. {title_as}"
+    if subtitle:
+        figure_title += "\n"
+    fig.suptitle(figure_title, fontsize=20,)
+    if subtitle:
+        fig.text(0.5, 0.94, subtitle, ha="center", va="top", fontsize=14)
 
     fig.legend(
         handles=list(legend_handles.values()),
+        title="Processes",
         loc="center left",
         bbox_to_anchor=(1.01, 0.5),
         bbox_transform=fig.transFigure,
         frameon=True,
-        fontsize=14,
+        fontsize=12.5,
+        title_fontsize=13,
+        labelspacing=0.65,
+        handletextpad=0.55,
+        borderpad=0.65,
         borderaxespad=0.0,
     )
 

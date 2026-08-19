@@ -1,4 +1,4 @@
-use std::{ fs::File };
+use std::{ collections::BTreeMap, fs::File };
 use std::path::PathBuf;
 
 use anyhow::{ Context, Result };
@@ -27,7 +27,19 @@ use sensitivity::{ calculate_sensitivity_map, read_experimental_data };
 
 use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
 
-type PlotGrid = (String, String, Option<i32>, AuxGrid, Option<u8>);
+struct PlotGrid {
+    name: String,
+    label: String,
+    group: Option<String>,
+    pdg: Option<i32>,
+    aux_grid: AuxGrid,
+    max_as: Option<u8>,
+}
+
+struct GroupedSupport {
+    label: String,
+    aux_grid: AuxGrid,
+}
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
 enum Mode {
@@ -82,12 +94,7 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
         let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));
         write_bin_support_maps_csv(&per_bin_support, &path)?;
     }
-
-    let support_grid = average_support_maps(per_bin_support);
-
-    let ranked_grid = ranked_cells(support_grid, config.threshold())?;
-
-    Ok(ranked_grid)
+    Ok(average_support_maps(per_bin_support))
 }
 
 /// Let user confirm that (s)he wants to override the path if it already exsits
@@ -166,13 +173,13 @@ fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid]) -> Result<()> {
     let plot_path = config.plot_path();
     let plot_datasets: Vec<_> = aux_grids
         .iter()
-        .map(|(name, label, pdg, aux_grid, max_as)| PlotDataset {
-            name,
-            label,
-            group: config.group_for_grid(name),
-            pdg,
-            aux_grid,
-            max_as,
+        .map(|grid| PlotDataset {
+            name: &grid.name,
+            label: &grid.label,
+            group: grid.group.as_deref(),
+            pdg: &grid.pdg,
+            aux_grid: &grid.aux_grid,
+            max_as: &grid.max_as,
         })
         .collect();
 
@@ -187,6 +194,7 @@ fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid]) -> Result<()> {
     .arg(tmp_file.path())
     .arg(plot_path)
     .arg(config.plot_style())
+    .arg(config.subtitle().unwrap_or(""))
     .status()
     .context("could not start python plotting script")?;
 
@@ -212,16 +220,45 @@ fn run_support(config: &GridConfig) -> Result<()> {
     let mut aux_grids = Vec::new();
 
     for selec in config.selection() {
+        let mut grouped_support = BTreeMap::<String, GroupedSupport>::new();
+
         for grid_name in config.grids() {
             let aux_grid = process_grid(grid_name, &config, &selec)?;
             let label = config.grid_label(grid_name)?;
-            aux_grids.push((
-                grid_name.to_string(),
-                label.to_string(),
-                selec.pdg(),
-                aux_grid,
-                selec.max_as(),
-            ));
+
+            if let Some(group_name) = config.group_for_grid(grid_name) {
+                if let Some(group) = grouped_support.get_mut(group_name) {
+                    group.aux_grid.merge(aux_grid);
+                } else {
+                    grouped_support.insert(
+                        group_name.to_string(),
+                        GroupedSupport {
+                            label: group_name.to_string(),
+                            aux_grid,
+                        },
+                    );
+                }
+            } else {
+                aux_grids.push(PlotGrid {
+                    name: grid_name.to_string(),
+                    label: label.to_string(),
+                    group: None,
+                    pdg: selec.pdg(),
+                    aux_grid: ranked_cells(aux_grid, config.threshold())?,
+                    max_as: selec.max_as(),
+                });
+            }
+        }
+
+        for (group_name, support) in grouped_support {
+            aux_grids.push(PlotGrid {
+                name: group_name.clone(),
+                label: support.label,
+                group: Some(group_name),
+                pdg: selec.pdg(),
+                aux_grid: ranked_cells(support.aux_grid, config.threshold())?,
+                max_as: selec.max_as(),
+            });
         }
     }
 
@@ -255,13 +292,14 @@ fn run_sensitivity(config: &GridConfig) -> Result<()> {
 
             let label = config.grid_label(grid_name)?;
 
-            aux_grids.push((
-                grid_name.to_string(),
-                label.to_string(),
-                selection.pdg(),
+            aux_grids.push(PlotGrid {
+                name: grid_name.to_string(),
+                label: label.to_string(),
+                group: config.group_for_grid(grid_name).map(str::to_string),
+                pdg: selection.pdg(),
                 aux_grid,
-                selection.max_as(),
-            ));
+                max_as: selection.max_as(),
+            });
         }
     }
 

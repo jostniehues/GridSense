@@ -2,11 +2,11 @@ path_to_grids = "/home/jnieh/uni/downloads/grids/pineappl" #if the grids share a
 
 [grids.wm_atlas]
 path = "WZ/matrixhawaii-atlas-wm-arxiv-1612.03016/grids/matrixhawaii-atlas-wm-arxiv-1612.03016-xsec000.lz4"
-label = 'Wm ATLAS $\frac{d\sigma}{d|\eta_l|}$'
+label = '$W^-$ ATLAS $\frac{d\sigma}{d|\eta_l|}$'
 
 [grids.wm_lhcb]
 path = "WZ/matrixhawaii-lhcb-wm-arxiv-1505.07024/grids/matrixhawaii-lhcb-wm-arxiv-1505.07024-xsec000.lz4"
-label = 'Wm LHCb $\frac{d\sigma}{d|\eta_l|}$'
+label = '$W^-$ LHCb $\frac{d\sigma}{d|\eta_l|}$'
 
 [grids.z0_lhcb]
 path = "WZ/matrixhawaii-lhcb-z0-arxiv-1505.07024/grids/matrixhawaii-lhcb-z0-arxiv-1505.07024-xsec000.lz4"
@@ -18,11 +18,13 @@ label = 'Z0 ATLAS $\frac{d\sigma}{dy_{\ell\ell}}$'
 
 [grids.wp_atlas]
 path = "WZ/matrixhawaii-atlas-wp-arxiv-1612.03016/grids/matrixhawaii-atlas-wp-arxiv-1612.03016-xsec000.lz4"
-label = 'Wp ATLAS $\frac{d\sigma}{d|\eta_l|}$'
+label = '$W^+$ ATLAS $\frac{d\sigma}{d|\eta_l|}$'
+experimental_data = "input/wz/Wplus_atlas.yaml"
 
 [grids.wp_lhcb]
 path = "WZ/matrixhawaii-lhcb-wp-arxiv-1505.07024/grids/matrixhawaii-lhcb-wp-arxiv-1505.07024-xsec000.lz4"
-label = 'Wp LHCb $\frac{d\sigma}{d|\eta_l|}$'
+label = '$W^+$ LHCb $\frac{d\sigma}{d|\eta_l|}$'
+experimental_data = "input/wz/Wplus_lhcb.yaml"
 
 [grids.ttbar_cms_yt]
 path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec000.lz4"
@@ -49,8 +51,8 @@ label = 'Incjets CMS $\frac{d^2\sigma}{d p_T dy}, \mu = p_{T,jet}$'
 path = "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec0to3-HT_parton_R04.lz4"
 label = 'Incjets CMS $\frac{d^2\sigma}{d p_T dy}, \mu = H_{T,parton}$'
 
-[grids.dijets]
-path = "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec000.lz4"
+[grids.dijets_cms_mjj]
+path = "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec000_4_merged.lz4"
 label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 
@@ -58,37 +60,38 @@ label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 [output]
 #process_grid = ["dijets"]
-#process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms", "dijets", "wm_atlas", "wm_lhcb","wp_atlas", "wp_lhcb","ttbar_cms_yt"]
+process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT", "dijets_cms_mjj","ttbar_cms_yt"]
 #process_grid = ["z0_lhcb", "incjets_cms_pT", "wm_atlas"]
 #process_grid = ["wm_lhcb", "wm_atlas"]
-#process_grid = ["wm_lhcb", "wp_lhcb", "z0_lhcb"]
+#process_grid = ["wm_lhcb", "wp_lhcb", "z0_lhcb", "wm_atlas", "wp_atlas", "z0_atlas"]
 #process_grid= ["ttbar_cms_yttbar", "ttbar_cms_mttbar"]
-process_grid= ["ttbar_cms_mttbar"]
+#process_grid= ["wp_atlas"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/thesis/kinematics/ttbar_cms_mttbar_supp.pdf"
-plot_style = "heatmap" # or boundary. Heatmap only adviced for single observables
+path_plot = "output/plots/thesis/overall_map/p_90_grid_nx26_nq18_20perc.pdf"
+plot_style = "boundary" # or boundary. Heatmap only adviced for single observables
+#subtitle = '$d \bar u$-initial channel, $d$-quark projection'
 
 #[output.groups]
 #"TTbar" = ["ttbar_cms_yt", "ttbar_cms_yttbar", "ttbar_cms_mttbar"]
 #"W Production" = ["wm_atlas", "wm_lhcb","wp_atlas","wp_lhcb"]
 #"Z Produciton" = ["z0_atlas", "z0_lhcb"]
-LHCB = ["z0_lhcb", "wm_lhcb", "wp_lhcb"]
+"LHCb DY" = ["z0_lhcb", "wm_lhcb", "wp_lhcb"]
+"ATLAS DY" = ["z0_atlas", "wm_atlas", "wp_atlas"]
 #"Jets" = ["dijets", "incjets_cms"]
 
 
 
 #configuration of the grid that is plotted later (auxilary grid)
 [config]
-#nx_x = 22
-#nx_q2 = 15
+nx_x = 26
+nx_q2 = 18
 x_min = 0.0001
 x_max = 1.0
 q2_min = 1000.0
-q2_max = 100000.0
-threshold = 0.90
-nx_x = 22
-nx_q2 = 15
+q2_max = 100000000.0
+threshold = 0.9
+
 
 
 [selection_conf]

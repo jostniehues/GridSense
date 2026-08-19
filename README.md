@@ -129,6 +129,7 @@ This block controls what gets plotted and where the final PDF is written.
 - `process_grid`: list of grid names to process
 - `path_plot`: output path for the generated PDF
 - `detail`: (bool). If a .csv should be generated per grid writing (bin,q2,x,contrib) for each        interpolation grid node.
+- `subtitle`: optional subtitle. Matplotlib math text can be embedded between `$` delimiters. In TOML, a literal string avoids escaping LaTeX backslashes, for example `subtitle = 'Born level: $\mu^2 = M_W^2$'`.
 - `output.groups`: optional named groups. Group members share one color and line style and are plotted as one combined area with a common outer boundary. Every grouped grid must also occur in `process_grid`.
 
 

@@ -49,6 +49,9 @@ struct OutputConfig {
     detail: bool,
 
     #[serde(default)]
+    subtitle: Option<String>,
+
+    #[serde(default)]
     groups: HashMap<String, Vec<String>>,
 
     #[serde(default)]
@@ -175,6 +178,10 @@ impl GridConfig {
 
     pub fn detail(&self) -> bool {
         self.output.detail
+    }
+
+    pub fn subtitle(&self) -> Option<&str> {
+        self.output.subtitle.as_deref()
     }
 
     pub fn grids(&self) -> &[String] {
