@@ -1,6 +1,5 @@
 //! Experimental inputs and covariance matrices for sensitivity calculations.
 
-use std::collections::BTreeMap;
 use std::fs::File;
 use std::path::Path;
 
@@ -13,17 +12,8 @@ use crate::transform::{ AuxGrid, BinSupportMaps };
 /// Experimental input for one observable.
 #[derive(Debug, Deserialize)]
 pub(crate) struct ExperimentalData {
-    observable: Observable,
     bins: Vec<ExperimentalBin>,
     uncertainties: Vec<UncertaintySource>,
-    #[serde(rename = "grid_to_dat_norm")]
-    grid_to_data_norm: Option<GridToDataNorm>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Observable {
-    name: String,
-    unit: String,
 }
 
 /// One bin of a one- or multi-differential distribution.
@@ -32,15 +22,7 @@ struct Observable {
 /// has two. The covariance construction is independent of that number.
 #[derive(Debug, Deserialize)]
 struct ExperimentalBin {
-    id: usize,
-    ranges: BTreeMap<String, BinRange>,
     value: f64,
-}
-
-#[derive(Debug, Deserialize)]
-struct BinRange {
-    low: f64,
-    high: f64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -67,12 +49,6 @@ enum UncertaintyUnit {
     Relative,
 }
 
-#[derive(Debug, Deserialize)]
-struct GridToDataNorm {
-    kind: String,
-    factor: f64,
-}
-
 type CovarianceMatrix = DMatrix<f64>;
 
 /// Read the YAML format (simplified HepData version).
@@ -87,15 +63,13 @@ pub(crate) fn read_experimental_data(path: &Path) -> Result<ExperimentalData> {
 }
 
 /// Construct the covariance matrix of relative deviations.
-///
-/// Uncorrelated sources contribute only to the diagonal. Each correlated
-/// source is interpreted as one signed nuisance shift and contributes its
-/// outer product. Absolute shifts are divided by the experimental central
-/// values; relative shifts are assumed to be fractional values.
+/// Absolute shifts are divided by the experimental central values. Relative shifts are assumed to be fractional values.
 fn construct_covariance(data: &ExperimentalData) -> Result<CovarianceMatrix> {
     let number_of_bins = data.bins.len();
     let mut covariance = DMatrix::zeros(number_of_bins, number_of_bins);
-    let ignore_correlations = true;
+    
+    //leave this as it is (only for my one debug purposes)
+    let ignore_correlations = false;
 
     for source in &data.uncertainties {
         if source.per_bin.len() != number_of_bins {
@@ -271,6 +245,7 @@ fn build_p_matrix(
     for observable_bin in 0..number_of_data_bins {
         for iq in 0..nq {
             for ix in 0..nx {
+                //flatten
                 let cell_index = iq * nx + ix;
                 p_matrix[(observable_bin, cell_index)] =
                     support.weights[observable_bin][iq][ix];
@@ -298,6 +273,7 @@ fn build_sensitivity_map(
         let p_z = p_matrix.column(cell_index);
         let weighted_p_z = inverse_covariance * p_z;
         let sensitivity = p_z.dot(&weighted_p_z);
+        //deflatten
         let iq = cell_index / nx;
         let ix = cell_index % nx;
 
@@ -311,7 +287,7 @@ fn build_sensitivity_map(
     })
 }
 
-/// Given 
+ 
 pub(crate) fn calculate_sensitivity_map(
     support: BinSupportMaps,
     data: &ExperimentalData,
@@ -358,7 +334,7 @@ mod tests {
         }
 
         assert_eq!(data.bins.len(), 10);
-        assert_eq!(data.bins[0].ranges.len(), 1);
+        assert_eq!(data.bins[0].value, 0.0736);
         assert_eq!(covariance.nrows(), 10);
         assert_eq!(covariance.ncols(), 10);
 
@@ -410,15 +386,14 @@ mod tests {
     }
 
     #[test]
-    fn format_supports_two_dimensional_bins() {
+    fn format_ignores_range_metadata() {
         let yaml =
             r#"
 observable:
   name: "d2sigma/dxdy"
   unit: "pb"
 bins:
-  - id: 0
-    ranges:
+  - ranges:
       x: { low: 0.0, high: 1.0 }
       y: { low: 2.0, high: 3.0 }
     value: 4.0
@@ -427,13 +402,12 @@ uncertainties:
     kind: "uncorrelated"
     unit: "absolute"
     per_bin: [0.5]
-grid_to_dat_norm: null
 "#;
 
         let data: ExperimentalData = serde_yaml::from_str(yaml).unwrap();
         let covariance = construct_covariance(&data).unwrap();
 
-        assert_eq!(data.bins[0].ranges.len(), 2);
+        assert_eq!(data.bins[0].value, 4.0);
         assert_eq!(covariance, DMatrix::from_element(1, 1, 0.015625));
     }
 

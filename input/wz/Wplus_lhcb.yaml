@@ -6,29 +6,21 @@ observable:
   unit: "pb"
 
 bins:
-  - id: 0
-    ranges: { "eta_mu": { low: 2, high: 2.25 } }
+  - ranges: { "eta_mu": { low: 2, high: 2.25 } }
     value: 192.2
-  - id: 1
-    ranges: { "eta_mu": { low: 2.25, high: 2.5 } }
+  - ranges: { "eta_mu": { low: 2.25, high: 2.5 } }
     value: 178.8
-  - id: 2
-    ranges: { "eta_mu": { low: 2.5, high: 2.75 } }
+  - ranges: { "eta_mu": { low: 2.5, high: 2.75 } }
     value: 154.3
-  - id: 3
-    ranges: { "eta_mu": { low: 2.75, high: 3 } }
+  - ranges: { "eta_mu": { low: 2.75, high: 3 } }
     value: 122.8
-  - id: 4
-    ranges: { "eta_mu": { low: 3, high: 3.25 } }
+  - ranges: { "eta_mu": { low: 3, high: 3.25 } }
     value: 94.3
-  - id: 5
-    ranges: { "eta_mu": { low: 3.25, high: 3.5 } }
+  - ranges: { "eta_mu": { low: 3.25, high: 3.5 } }
     value: 61.6
-  - id: 6
-    ranges: { "eta_mu": { low: 3.5, high: 4 } }
+  - ranges: { "eta_mu": { low: 3.5, high: 4 } }
     value: 60
-  - id: 7
-    ranges: { "eta_mu": { low: 4, high: 4.5 } }
+  - ranges: { "eta_mu": { low: 4, high: 4.5 } }
     value: 14.3
 
 uncertainties:

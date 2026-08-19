@@ -1,43 +1,32 @@
 # ATLAS W+ lepton-pseudorapidity measurement, arXiv:1612.03016, sqrt(s) = 7 TeV.
 # Relative uncertainties converted from percent values in wplus.dat.
 # The 1.8% AtlasLumi2011 normalization uncertainty is intentionally excluded.
-observable:
-  name: "dsigma/d|eta_l|(W+)"
-  unit: "pb"
+# observable:
+#   name: "dsigma/d|eta_l|(W+)"
+#   unit: "pb"
 
 bins:
-  - id: 0
-    ranges: { "|eta_l|": { low: 0, high: 0.21 } }
+  - ranges: { "|eta_l|": { low: 0, high: 0.21 } }
     value: 577.15
-  - id: 1
-    ranges: { "|eta_l|": { low: 0.21, high: 0.42 } }
+  - ranges: { "|eta_l|": { low: 0.21, high: 0.42 } }
     value: 576.87
-  - id: 2
-    ranges: { "|eta_l|": { low: 0.42, high: 0.63 } }
+  - ranges: { "|eta_l|": { low: 0.42, high: 0.63 } }
     value: 581.75
-  - id: 3
-    ranges: { "|eta_l|": { low: 0.63, high: 0.84 } }
+  - ranges: { "|eta_l|": { low: 0.63, high: 0.84 } }
     value: 586.07
-  - id: 4
-    ranges: { "|eta_l|": { low: 0.84, high: 1.05 } }
+  - ranges: { "|eta_l|": { low: 0.84, high: 1.05 } }
     value: 586.33
-  - id: 5
-    ranges: { "|eta_l|": { low: 1.05, high: 1.37 } }
+  - ranges: { "|eta_l|": { low: 1.05, high: 1.37 } }
     value: 599.07
-  - id: 6
-    ranges: { "|eta_l|": { low: 1.37, high: 1.52 } }
+  - ranges: { "|eta_l|": { low: 1.37, high: 1.52 } }
     value: 596.75
-  - id: 7
-    ranges: { "|eta_l|": { low: 1.52, high: 1.74 } }
+  - ranges: { "|eta_l|": { low: 1.52, high: 1.74 } }
     value: 604.17
-  - id: 8
-    ranges: { "|eta_l|": { low: 1.74, high: 1.95 } }
+  - ranges: { "|eta_l|": { low: 1.74, high: 1.95 } }
     value: 606.93
-  - id: 9
-    ranges: { "|eta_l|": { low: 1.95, high: 2.18 } }
+  - ranges: { "|eta_l|": { low: 1.95, high: 2.18 } }
     value: 593.4
-  - id: 10
-    ranges: { "|eta_l|": { low: 2.18, high: 2.5 } }
+  - ranges: { "|eta_l|": { low: 2.18, high: 2.5 } }
     value: 558.46
 
 uncertainties:
