@@ -7,7 +7,7 @@ use std::path::{ Path, PathBuf };
 use anyhow::{ Context, Result, anyhow };
 use serde::{ Deserialize, Deserializer, de };
 
-use crate::transform::GridSpec;
+use crate::transform::{ GridPhase, GridSpec };
 
 /// Root structure of the TOML configuration file
 #[derive(Debug, Deserialize)]
@@ -23,6 +23,10 @@ pub struct GridConfig {
 struct TransformConfig {
     nx_x: usize,
     nx_q2: usize,
+    #[serde(default)]
+    phase_x: f64,
+    #[serde(default)]
+    phase_q2: f64,
     x_min: f64,
     x_max: f64,
     q2_min: f64,
@@ -168,6 +172,14 @@ impl GridConfig {
             q2_max: self.config.q2_max,
         }
     }
+
+    pub(crate) fn grid_phase(&self) -> GridPhase {
+        GridPhase {
+            x: self.config.phase_x,
+            q2: self.config.phase_q2,
+        }
+    }
+
     pub fn pdf(&self) -> &str {
         &self.selection_conf.pdf
     }

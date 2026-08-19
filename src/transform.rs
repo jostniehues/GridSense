@@ -35,6 +35,12 @@ pub enum XVar {
     X2,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct GridPhase {
+    pub x: f64,
+    pub q2: f64,
+}
+
 /// Sums the `(x1, x2, q2)` contributions per bin over one x-variable.
 ///
 /// `XVar::X1` keeps `x1` and sums over `x2`.
@@ -147,11 +153,33 @@ fn logarithmic_edges(min: f64, max: f64, number_of_bins: usize) -> Vec<f64> {
         .collect()
 }
 
+/// Build logarithmic edges with extra cells for an internal phase-stability test.
+fn shifted_logarithmic_edges(
+    min: f64,
+    max: f64,
+    number_of_bins: usize,
+    phase: f64,
+) -> Vec<f64> {
+    if phase == 0.0 {
+        return logarithmic_edges(min, max, number_of_bins);
+    }
+
+    let log_min = min.log10();
+    let log_max = max.log10();
+    let width = (log_max - log_min) / number_of_bins as f64;
+
+    // Add extra edges so the shifted grid still covers the original interval.
+    (-1..=number_of_bins as isize)
+        .map(|i| log_min + (i as f64 + phase) * width)
+        .collect()
+}
+
 /// Sort the kinematic contribution from a given bin in the auxilary 3D-grid cell
 fn accumulate_bin_in_3d(
     bin: &[KinematicsContribution],
     lx_edges: &[f64],
-    lq_edges: &[f64]
+    lq_edges: &[f64],
+    grid_spec: &GridSpec,
 ) -> AuxGrid3D {
     let nx = lx_edges.len() - 1;
     let nq = lq_edges.len() - 1;
@@ -159,6 +187,18 @@ fn accumulate_bin_in_3d(
     let mut cells = AuxGrid3D::new(nx, nq);
 
     for point in bin {
+        // Guard cells only prevent losses caused by shifting the edges. Keep the
+        // physical input domain identical for every phase.
+        if !(point.x1 >= grid_spec.x_min
+            && point.x1 <= grid_spec.x_max
+            && point.x2 >= grid_spec.x_min
+            && point.x2 <= grid_spec.x_max
+            && point.q2 >= grid_spec.q2_min
+            && point.q2 <= grid_spec.q2_max)
+        {
+            continue;
+        }
+
         let Some(ix1) = find_bin(point.x1.log10(), lx_edges) else {
             continue;
         };
@@ -215,10 +255,11 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
     Some(projected)
 }
 
-/// Calculate all single P_B,z.
-pub(crate) fn build_per_bin_support_maps(
+/// Calculate all single P_B,z on an internally phase-shifted auxiliary grid.
+pub(crate) fn build_per_bin_support_maps_with_phase(
     contrib: &[Vec<KinematicsContribution>],
-    grid_spec: &GridSpec
+    grid_spec: &GridSpec,
+    phase: GridPhase,
 ) -> Result<BinSupportMaps, TransformError> {
     if
         grid_spec.nx_x == 0 ||
@@ -226,17 +267,31 @@ pub(crate) fn build_per_bin_support_maps(
         grid_spec.x_min <= 0.0 ||
         grid_spec.q2_min <= 0.0 ||
         grid_spec.x_min >= grid_spec.x_max ||
-        grid_spec.q2_min >= grid_spec.q2_max
+        grid_spec.q2_min >= grid_spec.q2_max ||
+        !phase.x.is_finite() ||
+        !phase.q2.is_finite() ||
+        !(0.0..1.0).contains(&phase.x) ||
+        !(0.0..1.0).contains(&phase.q2)
     {
         return Err(TransformError::InvalidAuxgridSpec);
     }
 
-    let lx_edges = logarithmic_edges(grid_spec.x_min, grid_spec.x_max, grid_spec.nx_x);
-    let lq_edges = logarithmic_edges(grid_spec.q2_min, grid_spec.q2_max, grid_spec.nx_q2);
+    let lx_edges = shifted_logarithmic_edges(
+        grid_spec.x_min,
+        grid_spec.x_max,
+        grid_spec.nx_x,
+        phase.x,
+    );
+    let lq_edges = shifted_logarithmic_edges(
+        grid_spec.q2_min,
+        grid_spec.q2_max,
+        grid_spec.nx_q2,
+        phase.q2,
+    );
     let mut weights = Vec::with_capacity(contrib.len());
 
     for bin in contrib {
-        let cells = accumulate_bin_in_3d(bin, &lx_edges, &lq_edges);
+        let cells = accumulate_bin_in_3d(bin, &lx_edges, &lq_edges, grid_spec);
 
         let Some(projected) = project_bin_to_2d(&cells) else {
             continue;
@@ -344,4 +399,24 @@ pub fn ranked_cells(mut aux_grid: AuxGrid, threshold: f64) -> Result<AuxGrid, Tr
     }
 
     Ok(aux_grid)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn zero_phase_preserves_original_edges() {
+        let original = logarithmic_edges(1.0e-4, 1.0, 4);
+        let shifted = shifted_logarithmic_edges(1.0e-4, 1.0, 4, 0.0);
+
+        assert_eq!(shifted, original);
+    }
+
+    #[test]
+    fn half_phase_adds_two_half_cell_guards() {
+        let edges = shifted_logarithmic_edges(1.0, 100.0, 2, 0.5);
+
+        assert_eq!(edges, vec![-0.5, 0.5, 1.5, 2.5]);
+    }
 }

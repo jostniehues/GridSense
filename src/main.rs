@@ -22,7 +22,12 @@ use export::{
     write_q2xcontrib_csv,
     PlotDataset,
 };
-use transform::{ average_support_maps, build_per_bin_support_maps, ranked_cells, sum_over_x };
+use transform::{
+    average_support_maps,
+    build_per_bin_support_maps_with_phase,
+    ranked_cells,
+    sum_over_x,
+};
 use sensitivity::{ calculate_sensitivity_map, read_experimental_data };
 
 use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
@@ -88,7 +93,11 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
     // Build the normalized support map from the three-dimensional auxiliary binning.
     let grid_spec = config.grid_spec();
 
-    let per_bin_support = build_per_bin_support_maps(&kinematics, &grid_spec)?;
+    let per_bin_support = build_per_bin_support_maps_with_phase(
+        &kinematics,
+        &grid_spec,
+        config.grid_phase(),
+    )?;
 
     if config.detail() {
         let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));
@@ -133,7 +142,11 @@ fn process_sensitivity_grid(
 
     let kinematics = extract_kinematics(&grid, selection, config.pdf())?;
 
-    let support = build_per_bin_support_maps(&kinematics, &config.grid_spec())?;
+    let support = build_per_bin_support_maps_with_phase(
+        &kinematics,
+        &config.grid_spec(),
+        config.grid_phase(),
+    )?;
 
     if config.detail() {
         let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));

@@ -68,7 +68,7 @@ process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT", "dijets_cms_mjj","ttba
 #process_grid= ["wp_atlas"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/thesis/overall_map/p_90_grid_nx26_nq18_20perc.pdf"
+path_plot = "output/plots/thesis/overall_map/p_90_grid_25_18.pdf"
 plot_style = "boundary" # or boundary. Heatmap only adviced for single observables
 #subtitle = '$d \bar u$-initial channel, $d$-quark projection'
 
@@ -84,8 +84,10 @@ plot_style = "boundary" # or boundary. Heatmap only adviced for single observabl
 
 #configuration of the grid that is plotted later (auxilary grid)
 [config]
-nx_x = 26
+nx_x = 25
 nx_q2 = 18
+phase_x = 0.0
+phase_q2 = 0.0
 x_min = 0.0001
 x_max = 1.0
 q2_min = 1000.0
