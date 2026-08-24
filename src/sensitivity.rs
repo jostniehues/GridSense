@@ -1,5 +1,6 @@
 //! Experimental inputs and covariance matrices for sensitivity calculations.
 
+use std::collections::{ HashMap, HashSet };
 use std::fs::File;
 use std::path::Path;
 
@@ -8,6 +9,9 @@ use serde::Deserialize;
 use nalgebra::DMatrix;
 
 use crate::transform::{ AuxGrid, BinSupportMaps };
+
+// Debug switch: treat every uncertainty contribution as bin-wise uncorrelated.
+const IGNORE_CORRELATIONS: bool = false;
 
 /// Experimental input for one observable.
 #[derive(Debug, Deserialize)]
@@ -65,96 +69,131 @@ pub(crate) fn read_experimental_data(path: &Path) -> Result<ExperimentalData> {
 /// Construct the covariance matrix of relative deviations.
 /// Absolute shifts are divided by the experimental central values. Relative shifts are assumed to be fractional values.
 fn construct_covariance(data: &ExperimentalData) -> Result<CovarianceMatrix> {
+    construct_joint_covariance(&[data])
+}
+
+fn relative_shifts(
+    data: &ExperimentalData,
+    source: &UncertaintySource,
+) -> Result<Vec<f64>> {
     let number_of_bins = data.bins.len();
-    let mut covariance = DMatrix::zeros(number_of_bins, number_of_bins);
-    
-    //leave this as it is (only for my one debug purposes)
-    let ignore_correlations = false;
 
-    for source in &data.uncertainties {
-        if source.per_bin.len() != number_of_bins {
-            bail!(
-                "uncertainty source '{}' has {} entries for {} bins",
-                source.name,
-                source.per_bin.len(),
-                number_of_bins
-            );
+    if source.per_bin.len() != number_of_bins {
+        bail!(
+            "uncertainty source '{}' has {} entries for {} bins",
+            source.name,
+            source.per_bin.len(),
+            number_of_bins
+        );
+    }
+
+    let mut shifts = Vec::with_capacity(number_of_bins);
+
+    for (bin_index, uncertainty) in source.per_bin.iter().enumerate() {
+        if !uncertainty.is_finite() {
+            bail!("uncertainty source '{}' contains an invalid value", source.name);
         }
 
-        let mut relative_shifts = Vec::with_capacity(number_of_bins);
+        if (source.kind == UncertaintyKind::Uncorrelated
+            || source.correlation_matrix.is_some())
+            && *uncertainty < 0.0
+        {
+            bail!("uncertainty source '{}' contains a negative uncertainty magnitude", source.name);
+        }
 
-        for (bin_index, uncertainty) in source.per_bin.iter().enumerate() {
-            if !uncertainty.is_finite() {
-                bail!("uncertainty source '{}' contains an invalid value", source.name);
-            }
+        let relative_uncertainty = match source.unit {
+            UncertaintyUnit::Absolute => {
+                let central_value = data.bins[bin_index].value;
 
-            if (source.kind == UncertaintyKind::Uncorrelated
-                || source.correlation_matrix.is_some())
-                && *uncertainty < 0.0
-            {
-                bail!("uncertainty source '{}' contains a negative uncertainty magnitude", source.name);
-            }
-
-            let relative_uncertainty = match source.unit {
-                UncertaintyUnit::Absolute => {
-                    let central_value = data.bins[bin_index].value;
-
-                    if !central_value.is_finite() || central_value == 0.0 {
-                        bail!(
-                            "cannot convert uncertainty source '{}' to relative units because an experimental central value is zero or non-finite",
-                            source.name
-                        );
-                    }
-
-                    uncertainty / central_value.abs()
+                if !central_value.is_finite() || central_value == 0.0 {
+                    bail!(
+                        "cannot convert uncertainty source '{}' to relative units because an experimental central value is zero or non-finite",
+                        source.name
+                    );
                 }
-                UncertaintyUnit::Relative => *uncertainty,
-            };
 
-            relative_shifts.push(relative_uncertainty);
-        }
-
-        if ignore_correlations {
-            for (bin_index, uncertainty) in relative_shifts.iter().enumerate() {
-                covariance[(bin_index, bin_index)] += uncertainty.powi(2);
+                uncertainty / central_value.abs()
             }
-            continue;
-        }
+            UncertaintyUnit::Relative => *uncertainty,
+        };
 
-        if let Some(correlation) = &source.correlation_matrix {
-            if source.kind != UncertaintyKind::Correlated {
-                bail!(
-                    "uncertainty source '{}' has a correlation matrix but is not declared correlated",
-                    source.name
-                );
-            }
+        shifts.push(relative_uncertainty);
+    }
 
-            validate_correlation_matrix(correlation, number_of_bins, &source.name)?;
+    Ok(shifts)
+}
 
-            for row in 0..number_of_bins {
-                for column in 0..number_of_bins {
-                    covariance[(row, column)] += correlation[row][column]
-                        * relative_shifts[row]
-                        * relative_shifts[column];
+/// Construct one relative covariance matrix for several data sets. Correlated
+/// sources with the same name share one nuisance parameter across data sets.
+fn construct_joint_covariance(data_sets: &[&ExperimentalData]) -> Result<CovarianceMatrix> {
+    let total_bins: usize = data_sets.iter().map(|data| data.bins.len()).sum();
+    let mut covariance = DMatrix::zeros(total_bins, total_bins);
+    let mut shared_shifts = HashMap::<String, Vec<f64>>::new();
+    let mut offset = 0;
+
+    for data in data_sets {
+        let number_of_bins = data.bins.len();
+        let mut seen_shared_sources = HashSet::new();
+
+        for source in &data.uncertainties {
+            let shifts = relative_shifts(data, source)?;
+
+            if IGNORE_CORRELATIONS {
+                for (bin_index, uncertainty) in shifts.iter().enumerate() {
+                    covariance[(offset + bin_index, offset + bin_index)] += uncertainty.powi(2);
                 }
+                continue;
             }
 
-            continue;
-        }
-
-        match source.kind {
-            UncertaintyKind::Uncorrelated => {
-                for (bin_index, uncertainty) in relative_shifts.iter().enumerate() {
-                    covariance[(bin_index, bin_index)] += uncertainty.powi(2);
+            if let Some(correlation) = &source.correlation_matrix {
+                if source.kind != UncertaintyKind::Correlated {
+                    bail!(
+                        "uncertainty source '{}' has a correlation matrix but is not declared correlated",
+                        source.name
+                    );
                 }
-            }
-            UncertaintyKind::Correlated => {
+
+                validate_correlation_matrix(correlation, number_of_bins, &source.name)?;
+
                 for row in 0..number_of_bins {
                     for column in 0..number_of_bins {
-                        covariance[(row, column)] +=
-                            relative_shifts[row] * relative_shifts[column];
+                        covariance[(offset + row, offset + column)] +=
+                            correlation[row][column] * shifts[row] * shifts[column];
                     }
                 }
+
+                continue;
+            }
+
+            match source.kind {
+                UncertaintyKind::Uncorrelated => {
+                    for (bin_index, uncertainty) in shifts.iter().enumerate() {
+                        covariance[(offset + bin_index, offset + bin_index)] += uncertainty.powi(2);
+                    }
+                }
+                UncertaintyKind::Correlated => {
+                    if !seen_shared_sources.insert(source.name.as_str()) {
+                        bail!("correlated uncertainty source '{}' occurs more than once in one data set", source.name);
+                    }
+
+                    let combined = shared_shifts
+                        .entry(source.name.clone())
+                        .or_insert_with(|| vec![0.0; total_bins]);
+
+                    for (bin_index, shift) in shifts.iter().enumerate() {
+                        combined[offset + bin_index] = *shift;
+                    }
+                }
+            }
+        }
+
+        offset += number_of_bins;
+    }
+
+    for shifts in shared_shifts.values() {
+        for row in 0..total_bins {
+            for column in 0..total_bins {
+                covariance[(row, column)] += shifts[row] * shifts[column];
             }
         }
     }
@@ -294,7 +333,37 @@ pub(crate) fn calculate_sensitivity_map(
 ) -> Result<AuxGrid> {
     let covariance = construct_covariance(data)?;
     let inverse_covariance = invert_covariance(&covariance)?;
-    let mut sensitivity = build_sensitivity_map(support, &inverse_covariance)?;
+    let sensitivity = build_sensitivity_map(support, &inverse_covariance)?;
+
+    normalize_sensitivity(sensitivity)
+}
+
+pub(crate) fn calculate_joint_sensitivity_map(
+    data_sets: Vec<(BinSupportMaps, ExperimentalData)>,
+) -> Result<AuxGrid> {
+    if data_sets.is_empty() {
+        bail!("cannot calculate sensitivity without data sets");
+    }
+
+    let experimental_data: Vec<_> = data_sets.iter().map(|(_, data)| data).collect();
+    let covariance = construct_joint_covariance(&experimental_data)?;
+    let inverse_covariance = invert_covariance(&covariance)?;
+    let mut supports = data_sets.into_iter().map(|(support, _)| support);
+    let mut support = supports.next().expect("non-empty data set list");
+
+    for next in supports {
+        if support.lx_edges != next.lx_edges || support.lq_edges != next.lq_edges {
+            bail!("all jointly correlated support maps must use the same auxiliary grid");
+        }
+        support.weights.extend(next.weights);
+    }
+
+    let sensitivity = build_sensitivity_map(support, &inverse_covariance)?;
+
+    normalize_sensitivity(sensitivity)
+}
+
+fn normalize_sensitivity(mut sensitivity: AuxGrid) -> Result<AuxGrid> {
 
     let total: f64 = sensitivity.weights.iter().flatten().sum();
 
@@ -365,6 +434,24 @@ mod tests {
         assert!((covariance[(0, 1)] - covariance[(1, 0)]).abs() < 1.0e-15);
 
         invert_covariance(&covariance).expect("Wplus covariance should be invertible");
+    }
+
+    #[test]
+    fn constructs_joint_atlas_wz_covariance_with_cross_process_correlations() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let wplus = read_experimental_data(&root.join("input/wz/Wplus_atlas.yaml")).unwrap();
+        let wminus = read_experimental_data(&root.join("input/wz/Wminus_atlas.yaml")).unwrap();
+        let zpeak = read_experimental_data(&root.join("input/wz/Zpeak_atlas.yaml")).unwrap();
+        let covariance = construct_joint_covariance(&[&wplus, &wminus, &zpeak]).unwrap();
+
+        assert_eq!((wplus.bins.len(), wminus.bins.len(), zpeak.bins.len()), (11, 11, 12));
+        assert_eq!(covariance.shape(), (34, 34));
+        assert!((covariance[(0, 11)] - 2.34583e-5).abs() < 1.0e-15);
+        assert!((covariance[(0, 22)] - 6.1756e-6).abs() < 1.0e-15);
+        assert!((covariance[(11, 22)] - 7.3797e-6).abs() < 1.0e-15);
+        assert!((covariance[(0, 11)] - covariance[(11, 0)]).abs() < 1.0e-15);
+
+        invert_covariance(&covariance).expect("joint ATLAS covariance should be invertible");
     }
 
     #[test]

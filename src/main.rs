@@ -10,7 +10,7 @@ mod grids;
 mod transform;
 mod export;
 mod sensitivity;
-use config::{ read_config, resolve_grid_path };
+use config::{ read_config, resolve_grid_path, SupportGroupWeighting };
 use std::io::{ self, Write };
 use grids::extract_kinematics;
 use std::path::Path;
@@ -22,8 +22,8 @@ use export::{
     write_q2xcontrib_csv,
     PlotDataset,
 };
-use transform::{ average_support_maps, build_per_bin_support_maps, ranked_cells, sum_over_x };
-use sensitivity::{ calculate_sensitivity_map, read_experimental_data };
+use transform::{ average_support_maps, build_per_bin_support_maps, ranked_cells, sum_over_x, BinSupportMaps };
+use sensitivity::{ calculate_joint_sensitivity_map, calculate_sensitivity_map, read_experimental_data, ExperimentalData };
 
 use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
 
@@ -34,11 +34,6 @@ struct PlotGrid {
     pdg: Option<i32>,
     aux_grid: AuxGrid,
     max_as: Option<u8>,
-}
-
-struct GroupedSupport {
-    label: String,
-    aux_grid: AuxGrid,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -63,8 +58,13 @@ struct Cli {
     mode: Mode,
 }
 
-/// helper function to process multiple grids
-fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> Result<AuxGrid> {
+/// Load one grid and build its per-observable-bin support maps.
+fn load_bin_support_grid(
+    grid_name: &str,
+    config: &GridConfig,
+    selection: &Selection,
+    write_contributions: bool,
+) -> Result<BinSupportMaps> {
     let grid_path = resolve_grid_path(&config, grid_name)?;
 
     let grid_file = File::open(&grid_path).with_context(||
@@ -76,7 +76,7 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
 
     let kinematics = extract_kinematics(&grid, selection, config.pdf())?;
 
-    if config.detail() == true {
+    if config.detail() && write_contributions {
         let summed_points_x1 = sum_over_x(&kinematics, transform::XVar::X1)?;
         let summed_points_x2 = sum_over_x(&kinematics, transform::XVar::X2)?;
         let output_dir = Path::new("output/data/contrib");
@@ -94,7 +94,51 @@ fn process_grid(grid_name: &str, config: &GridConfig, selection: &Selection) -> 
         let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));
         write_bin_support_maps_csv(&per_bin_support, &path)?;
     }
-    Ok(average_support_maps(per_bin_support))
+    Ok(per_bin_support)
+}
+
+fn combine_grouped_support(
+    support_maps: Vec<BinSupportMaps>,
+    weighting: SupportGroupWeighting,
+) -> Result<AuxGrid> {
+    let Some(reference) = support_maps.first() else {
+        anyhow::bail!("cannot combine an empty support group");
+    };
+
+    if support_maps.iter().any(|support| {
+        support.lx_edges != reference.lx_edges || support.lq_edges != reference.lq_edges
+    }) {
+        anyhow::bail!("cannot combine support maps with different auxiliary grids");
+    }
+
+    let number_of_grids = support_maps.len();
+    let mut support_maps = support_maps.into_iter();
+    let first = support_maps.next().expect("support group was checked as non-empty");
+
+    match weighting {
+        SupportGroupWeighting::Grids => {
+            let mut combined = average_support_maps(first);
+
+            for support in support_maps {
+                combined.merge(average_support_maps(support));
+            }
+
+            for weight in combined.weights.iter_mut().flatten() {
+                *weight /= number_of_grids as f64;
+            }
+
+            Ok(combined)
+        }
+        SupportGroupWeighting::Bins => {
+            let mut combined = first;
+
+            for support in support_maps {
+                combined.weights.extend(support.weights);
+            }
+
+            Ok(average_support_maps(combined))
+        }
+    }
 }
 
 /// Let user confirm that (s)he wants to override the path if it already exsits
@@ -114,39 +158,17 @@ fn confirm_overwrite(path: &Path) -> Result<bool> {
     }
 }
 
-// Helper function to calculate sensititvy maps
-fn process_sensitivity_grid(
+// Load one grid and its experimental input for a sensitivity calculation.
+fn load_sensitivity_grid(
     grid_name: &str,
     experimental_path: &Path,
     config: &GridConfig,
     selection: &Selection
-) -> Result<AuxGrid> {
-    let grid_path = resolve_grid_path(config, grid_name)?;
-
-    let grid_file = File::open(&grid_path).with_context(|| {
-        format!("could not open grid '{}'", grid_path.display())
-    })?;
-
-    let grid = Grid::read(grid_file).with_context(|| {
-        format!("could not read grid '{}'", grid_path.display())
-    })?;
-
-    let kinematics = extract_kinematics(&grid, selection, config.pdf())?;
-
-    let support = build_per_bin_support_maps(&kinematics, &config.grid_spec())?;
-
-    if config.detail() {
-        let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));
-        write_bin_support_maps_csv(&support, &path)?;
-    }
-
+) -> Result<(BinSupportMaps, ExperimentalData)> {
+    let support = load_bin_support_grid(grid_name, config, selection, false)?;
     let experimental_data = read_experimental_data(experimental_path)?;
 
-    let sensitivity = calculate_sensitivity_map(support, &experimental_data)?;
-
-    let ranked_sense = ranked_cells(sensitivity, config.threshold())?;
-
-    Ok(ranked_sense)
+    Ok((support, experimental_data))
 }
 
 fn main() {
@@ -169,7 +191,7 @@ fn run() -> Result<()> {
 
 /// Export the calculated auxiliary grids and pass them to the Python plotter.
 /// ToDo: Pass Mode (Sense or Supp) to do specific adjustmend
-fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid]) -> Result<()> {
+fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid], mode: Mode) -> Result<()> {
     let plot_path = config.plot_path();
     let plot_datasets: Vec<_> = aux_grids
         .iter()
@@ -194,6 +216,10 @@ fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid]) -> Result<()> {
     .arg(tmp_file.path())
     .arg(plot_path)
     .arg(config.plot_style())
+    .arg(match mode {
+        Mode::Supp => "supp",
+        Mode::Sense => "sense",
+    })
     .arg(config.subtitle().unwrap_or(""))
     .status()
     .context("could not start python plotting script")?;
@@ -220,25 +246,19 @@ fn run_support(config: &GridConfig) -> Result<()> {
     let mut aux_grids = Vec::new();
 
     for selec in config.selection() {
-        let mut grouped_support = BTreeMap::<String, GroupedSupport>::new();
+        let mut grouped_support = BTreeMap::<String, Vec<BinSupportMaps>>::new();
 
         for grid_name in config.grids() {
-            let aux_grid = process_grid(grid_name, &config, &selec)?;
+            let bin_support = load_bin_support_grid(grid_name, config, &selec, true)?;
             let label = config.grid_label(grid_name)?;
 
             if let Some(group_name) = config.group_for_grid(grid_name) {
-                if let Some(group) = grouped_support.get_mut(group_name) {
-                    group.aux_grid.merge(aux_grid);
-                } else {
-                    grouped_support.insert(
-                        group_name.to_string(),
-                        GroupedSupport {
-                            label: group_name.to_string(),
-                            aux_grid,
-                        },
-                    );
-                }
+                grouped_support
+                    .entry(group_name.to_string())
+                    .or_default()
+                    .push(bin_support);
             } else {
+                let aux_grid = average_support_maps(bin_support);
                 aux_grids.push(PlotGrid {
                     name: grid_name.to_string(),
                     label: label.to_string(),
@@ -250,19 +270,24 @@ fn run_support(config: &GridConfig) -> Result<()> {
             }
         }
 
-        for (group_name, support) in grouped_support {
+        for (group_name, support_maps) in grouped_support {
+            let aux_grid = combine_grouped_support(
+                support_maps,
+                config.support_group_weighting(),
+            )?;
+
             aux_grids.push(PlotGrid {
                 name: group_name.clone(),
-                label: support.label,
+                label: group_name.clone(),
                 group: Some(group_name),
                 pdg: selec.pdg(),
-                aux_grid: ranked_cells(support.aux_grid, config.threshold())?,
+                aux_grid: ranked_cells(aux_grid, config.threshold())?,
                 max_as: selec.max_as(),
             });
         }
     }
 
-    plot_aux_grids(config, &aux_grids)
+    plot_aux_grids(config, &aux_grids, Mode::Supp)
 }
 
 fn run_sensitivity(config: &GridConfig) -> Result<()> {
@@ -280,22 +305,44 @@ fn run_sensitivity(config: &GridConfig) -> Result<()> {
     let mut aux_grids = Vec::new();
 
     for selection in config.selection() {
+        let mut grouped_data = BTreeMap::<String, Vec<(BinSupportMaps, ExperimentalData)>>::new();
+
         for grid_name in config.grids() {
             let experimental_path = config.experimental_data_path(grid_name)?;
-
-            let aux_grid = process_sensitivity_grid(
+            let data_set = load_sensitivity_grid(
                 grid_name,
                 &experimental_path,
                 config,
                 &selection
             )?;
 
-            let label = config.grid_label(grid_name)?;
+            if let Some(group_name) = config.group_for_grid(grid_name) {
+                grouped_data.entry(group_name.to_string()).or_default().push(data_set);
+            } else {
+                let (support, experimental_data) = data_set;
+                let sensitivity = calculate_sensitivity_map(support, &experimental_data)?;
+                let aux_grid = ranked_cells(sensitivity, config.threshold())?;
+                let label = config.grid_label(grid_name)?;
+
+                aux_grids.push(PlotGrid {
+                    name: grid_name.to_string(),
+                    label: label.to_string(),
+                    group: None,
+                    pdg: selection.pdg(),
+                    aux_grid,
+                    max_as: selection.max_as(),
+                });
+            }
+        }
+
+        for (group_name, data_sets) in grouped_data {
+            let sensitivity = calculate_joint_sensitivity_map(data_sets)?;
+            let aux_grid = ranked_cells(sensitivity, config.threshold())?;
 
             aux_grids.push(PlotGrid {
-                name: grid_name.to_string(),
-                label: label.to_string(),
-                group: config.group_for_grid(grid_name).map(str::to_string),
+                name: group_name.clone(),
+                label: group_name.clone(),
+                group: Some(group_name),
                 pdg: selection.pdg(),
                 aux_grid,
                 max_as: selection.max_as(),
@@ -303,5 +350,5 @@ fn run_sensitivity(config: &GridConfig) -> Result<()> {
         }
     }
 
-    plot_aux_grids(config, &aux_grids)
+    plot_aux_grids(config, &aux_grids, Mode::Sense)
 }

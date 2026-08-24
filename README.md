@@ -87,6 +87,7 @@ label = 'Z0 LHCb $\frac{d\sigma}{dy_{\ell\ell}}$'
 process_grid = ["wm_atlas", "z0_lhcb"]
 path_plot = "output/plots/fullgrid.pdf"
 detail = false
+support_group_weighting = "grids"
 
 [output.groups]
 "Vector bosons" = ["wm_atlas", "z0_lhcb"]
@@ -131,6 +132,7 @@ This block controls what gets plotted and where the final PDF is written.
 - `detail`: (bool). If a .csv should be generated per grid writing (bin,q2,x,contrib) for each        interpolation grid node.
 - `subtitle`: optional subtitle. Matplotlib math text can be embedded between `$` delimiters. In TOML, a literal string avoids escaping LaTeX backslashes, for example `subtitle = 'Born level: $\mu^2 = M_W^2$'`.
 - `output.groups`: optional named groups. Group members share one color and line style and are plotted as one combined area with a common outer boundary. Every grouped grid must also occur in `process_grid`.
+- `support_group_weighting`: global weighting of grouped support maps in `supp` mode. `"grids"` gives every grid equal weight, independently of its number of observable bins. `"bins"` combines all observable bins first and gives every bin equal weight. The default is `"grids"`; the setting does not affect `sense` mode.
 
 
 If a name listed in `process_grid` does not exactly match a `[grids.<name>]` section, the run fails.

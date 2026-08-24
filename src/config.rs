@@ -42,6 +42,19 @@ impl Default for PlotStyle {
     }
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum SupportGroupWeighting {
+    Grids,
+    Bins,
+}
+
+impl Default for SupportGroupWeighting {
+    fn default() -> Self {
+        Self::Grids
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct OutputConfig {
     path_plot: PathBuf,
@@ -56,6 +69,9 @@ struct OutputConfig {
 
     #[serde(default)]
     plot_style: PlotStyle,
+
+    #[serde(default)]
+    support_group_weighting: SupportGroupWeighting,
 }
 
 #[derive(Debug, Deserialize)]
@@ -137,6 +153,7 @@ fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D
 
     Ok(Some(channels.into_iter().collect()))
 }
+
 #[derive(Debug, Deserialize)]
 struct GridEntry {
     path: PathBuf,
@@ -215,6 +232,10 @@ impl GridConfig {
         }
     }
 
+    pub fn support_group_weighting(&self) -> SupportGroupWeighting {
+        self.output.support_group_weighting
+    }
+
     //check if grids from [output.groups] are also in process_grid
     fn validate_groups(&self) -> Result<()> {
         let all_grouped_grids_are_processed = self.output.groups
@@ -244,6 +265,7 @@ impl GridConfig {
 
         Ok(path.clone())
     }
+
 }
 
 impl SelectionConfig {
@@ -386,5 +408,21 @@ channels = ["5-1"]
             .unwrap_err();
 
         assert!(error.to_string().contains("decreasing bounds"));
+    }
+
+    #[test]
+    fn parses_global_support_group_weighting() {
+        let output: OutputConfig = toml::from_str(r#"
+path_plot = "plot.pdf"
+process_grid = ["wp_atlas", "wm_atlas"]
+detail = false
+support_group_weighting = "bins"
+
+[groups]
+"ATLAS DY" = ["wp_atlas", "wm_atlas"]
+"#).unwrap();
+
+        assert_eq!(output.support_group_weighting, SupportGroupWeighting::Bins);
+        assert_eq!(output.groups["ATLAS DY"].len(), 2);
     }
 }

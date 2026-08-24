@@ -3,6 +3,7 @@ path_to_grids = "/home/jnieh/uni/downloads/grids/pineappl" #if the grids share a
 [grids.wm_atlas]
 path = "WZ/matrixhawaii-atlas-wm-arxiv-1612.03016/grids/matrixhawaii-atlas-wm-arxiv-1612.03016-xsec000.lz4"
 label = '$W^-$ ATLAS $\frac{d\sigma}{d|\eta_l|}$'
+experimental_data = "input/wz/Wminus_atlas.yaml"
 
 [grids.wm_lhcb]
 path = "WZ/matrixhawaii-lhcb-wm-arxiv-1505.07024/grids/matrixhawaii-lhcb-wm-arxiv-1505.07024-xsec000.lz4"
@@ -15,6 +16,7 @@ label = 'Z0 LHCb $\frac{d\sigma}{dy_{\ell\ell}}$'
 [grids.z0_atlas]
 path = "WZ/matrixhawaii-atlas-z0-arxiv-1612.03016/grids/matrixhawaii-atlas-z0-arxiv-1612.03016-xsec000.lz4"
 label = 'Z0 ATLAS $\frac{d\sigma}{dy_{\ell\ell}}$'
+experimental_data = "input/wz/Zpeak_atlas.yaml"
 
 [grids.wp_atlas]
 path = "WZ/matrixhawaii-atlas-wp-arxiv-1612.03016/grids/matrixhawaii-atlas-wp-arxiv-1612.03016-xsec000.lz4"
@@ -60,23 +62,25 @@ label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 [output]
 #process_grid = ["dijets"]
-process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT", "dijets_cms_mjj","ttbar_cms_yt"]
+#process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT", "dijets_cms_mjj","ttbar_cms_yt"]
 #process_grid = ["z0_lhcb", "incjets_cms_pT", "wm_atlas"]
 #process_grid = ["wm_lhcb", "wm_atlas"]
-#process_grid = ["wm_lhcb", "wp_lhcb", "z0_lhcb", "wm_atlas", "wp_atlas", "z0_atlas"]
+#process_grid = ["wm_lhcb", "wp_lhcb", "z0_lhcb", "wm_atlas", "wp_atlas", "z0_atlas", "ttbar_cms_yt"]
 #process_grid= ["ttbar_cms_yttbar", "ttbar_cms_mttbar"]
-#process_grid= ["wp_atlas"]
+process_grid= ["incjets_cms_pT"]
+#process_grid = ["wp_atlas", "wm_atlas", "z0_atlas"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/thesis/overall_map/p_90_grid_nx26_nq18_20perc.pdf"
-plot_style = "boundary" # or boundary. Heatmap only adviced for single observables
+path_plot = "output/plots/thesis/sens/ttbar/test_supp.pdf"
+plot_style = "heatmap" # heatmap or boundary. Heatmap only adviced for single observables
+support_group_weighting = "bins" # "grids" or "bins"; only used in supp mode
 #subtitle = '$d \bar u$-initial channel, $d$-quark projection'
 
 #[output.groups]
 #"TTbar" = ["ttbar_cms_yt", "ttbar_cms_yttbar", "ttbar_cms_mttbar"]
 #"W Production" = ["wm_atlas", "wm_lhcb","wp_atlas","wp_lhcb"]
 #"Z Produciton" = ["z0_atlas", "z0_lhcb"]
-"LHCb DY" = ["z0_lhcb", "wm_lhcb", "wp_lhcb"]
+#"LHCb DY" = ["z0_lhcb", "wm_lhcb", "wp_lhcb"]
 "ATLAS DY" = ["z0_atlas", "wm_atlas", "wp_atlas"]
 #"Jets" = ["dijets", "incjets_cms"]
 
@@ -84,8 +88,8 @@ plot_style = "boundary" # or boundary. Heatmap only adviced for single observabl
 
 #configuration of the grid that is plotted later (auxilary grid)
 [config]
-nx_x = 26
-nx_q2 = 18
+nx_x = 22
+nx_q2 = 15
 x_min = 0.0001
 x_max = 1.0
 q2_min = 1000.0
@@ -98,6 +102,7 @@ threshold = 0.9
 pdf = "CT18NNLO"
 #channels = ["7-20"] # zero-based PineAPPL channel indices
 #channels = ["0-1"]
+#channels = ["1-6", "21-24", "26-82"]
 #leg_pdgs = [1]
 #leg_pdgs =  [1,2,3,4,5, -1,-2,-3,-4,-5]
 #pdgs = [2] #use zero for gluon per default

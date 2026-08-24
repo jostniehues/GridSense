@@ -35,4 +35,3 @@ uncertainties:
     unit: "absolute"
     per_bin: [0.00175, 0.00517, 0.00942, 0.0059, 0.00673, 0.00766, 0.00648, 0.00531, 0.00506, 0.00245]
 
-grid_to_dat_norm: null
