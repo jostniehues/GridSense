@@ -285,8 +285,11 @@ def main() -> int:
                     cmap=gradient,
                     vmin=0.0,
                     vmax=maximum,
-                    edgecolors=(0.0, 0.0, 0.0, 0.35),
-                    linewidth=0.15,
+                    # Match the quieter boundary styling while retaining enough
+                    # opacity for the weight gradient to remain readable.
+                    edgecolors=(1.0, 1.0, 1.0, 0.18),
+                    linewidth=0.25,
+                    alpha=0.82,
                 )
                 colorbar = fig.colorbar(mesh, ax=ax, pad=0.02)
                 colorbar_label = r"$W_z$" if mode == "supp" else r"$S_z$"

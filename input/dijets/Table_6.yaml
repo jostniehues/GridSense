@@ -1,0 +1,44 @@
+# CMS dijet cross section, HEPData ins1208923, Table 6.
+# Observable: d^2 sigma / (d m_jj d y_max) [pb/GeV], 0.0 <= y_max < 0.5.
+# Diagonal approximation: the table-level stat and total sys errors are treated
+# as bin-wise uncorrelated. Asymmetric sys errors are symmetrized by averaging
+# the magnitudes of their upward and downward variations.
+
+bins:
+  - ranges: { m_jj: { low: 197.0, high: 296.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 195.0
+  - ranges: { m_jj: { low: 296.0, high: 419.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 25.9
+  - ranges: { m_jj: { low: 419.0, high: 565.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 4.81
+  - ranges: { m_jj: { low: 565.0, high: 740.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 0.888
+  - ranges: { m_jj: { low: 740.0, high: 944.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 0.202
+  - ranges: { m_jj: { low: 944.0, high: 1181.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 0.0497
+  - ranges: { m_jj: { low: 1181.0, high: 1455.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 0.0129
+  - ranges: { m_jj: { low: 1455.0, high: 1770.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 0.00322
+  - ranges: { m_jj: { low: 1770.0, high: 2132.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 0.00088
+  - ranges: { m_jj: { low: 2132.0, high: 2546.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 0.000172
+  - ranges: { m_jj: { low: 2546.0, high: 3019.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 4.02e-05
+  - ranges: { m_jj: { low: 3019.0, high: 3416.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 5.41e-06
+  - ranges: { m_jj: { low: 3416.0, high: 4010.0 }, y_max: { low: 0.0, high: 0.5 } }
+    value: 1.14e-06
+
+uncertainties:
+  - name: "stat"
+    kind: "uncorrelated"
+    unit: "absolute"
+    per_bin: [2.8, 0.78, 0.142, 0.0101, 0.002, 0.00076, 0.00012, 5.3e-05, 2.57e-05, 1.08e-05, 4.76e-06, 2.03e-06, 7.33e-07]
+
+  - name: "sys"
+    kind: "uncorrelated"
+    unit: "absolute"
+    per_bin: [13.05, 1.5, 0.255, 0.04605, 0.01065, 0.002725, 0.00076, 0.0002085, 6.46e-05, 1.485e-05, 4.21e-06, 6.885e-07, 1.765e-07]
