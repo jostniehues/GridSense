@@ -76,11 +76,14 @@ The main configuration file is `grids.toml`.
 path_to_grids = "/home/user/grids/pineappl"
 
 [grids.wm_atlas]
-path = "WZ/matrixhawaii-atlas-wm/.../grid.lz4"
+paths = ["WZ/matrixhawaii-atlas-wm/.../grid.lz4"]
 label = 'Wm ATLAS $\frac{d\sigma}{|d\eta_l|}$'
 
 [grids.z0_lhcb]
-path = "WZ/matrixhawaii-lhcb-z0/.../grid.lz4"
+paths = [
+    "WZ/matrixhawaii-lhcb-z0/.../grid-000.lz4",
+    "WZ/matrixhawaii-lhcb-z0/.../grid-001.lz4",
+]
 label = 'Z0 LHCb $\frac{d\sigma}{dy_{\ell\ell}}$'
 
 [output]
@@ -114,14 +117,43 @@ This is a base directory used together with relative grid paths.
 
 ### `[grids.<name>]`
 
-Each grid entry defines one named grid.
+Each grid entry defines one named process or observable. It may contain one or
+more PineAPPL interpolation grids.
 
 Fields:
 
-- `path`: path to the `.lz4` file
+- `paths`: non-empty list of paths to `.lz4` files
 - `label`: legend label used in the plot
 
 The section name `wm_atlas` is the internal grid name. You later reference that name in `output.process_grid`.
+
+For a single interpolation grid, use a one-element list:
+
+```toml
+[grids.wm_atlas]
+paths = ["WZ/matrixhawaii-atlas-wm/.../grid.lz4"]
+label = "Wm ATLAS"
+```
+
+When `paths` contains multiple files, GridSense loads them in the listed order
+and concatenates their observable bins. In support mode, it then calculates one
+common support map over all concatenated bins:
+
+```toml
+[grids.dijets_cms_mjj]
+paths = [
+    "/home/user/grids/cms-dijets-xsec000.lz4",
+    "/home/user/grids/cms-dijets-xsec001.lz4",
+    "/home/user/grids/cms-dijets-xsec002.lz4",
+]
+label = 'Dijets CMS 7 TeV $\frac{d^2\sigma}{d M_{jj} dy}$'
+```
+
+Thus, GridSense does not calculate a separate $W_z$ for every file. It first
+appends all bins and then evaluates $W_z$ once, giving every retained observable
+bin equal weight. In sensitivity mode, the configured `experimental_data` file
+must contain the same total number of bins in the same order as the concatenated
+grid files.
 
 ### `[output]`
 

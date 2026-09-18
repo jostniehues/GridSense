@@ -1,70 +1,76 @@
 path_to_grids = "/home/jnieh/uni/downloads/grids/pineappl" #if the grids share a common path.
 
 [grids.wm_atlas]
-path = "WZ/matrixhawaii-atlas-wm-arxiv-1612.03016/grids/matrixhawaii-atlas-wm-arxiv-1612.03016-xsec000.lz4"
-label = '$W^-$ ATLAS $\frac{d\sigma}{d|\eta_l|}$'
+paths = ["WZ/matrixhawaii-atlas-wm-arxiv-1612.03016/grids/matrixhawaii-atlas-wm-arxiv-1612.03016-xsec000.lz4"]
+label = 'ATLAS $W^-$ $\frac{d\sigma}{d|\eta_l|}$'
 experimental_data = "input/wz/Wminus_atlas.yaml"
 
 [grids.wm_lhcb]
-path = "WZ/matrixhawaii-lhcb-wm-arxiv-1505.07024/grids/matrixhawaii-lhcb-wm-arxiv-1505.07024-xsec000.lz4"
-label = '$W^-$ LHCb $\frac{d\sigma}{d|\eta_l|}$'
+paths = ["WZ/matrixhawaii-lhcb-wm-arxiv-1505.07024/grids/matrixhawaii-lhcb-wm-arxiv-1505.07024-xsec000.lz4"]
+label = 'LHCb $W^-$ $\frac{d\sigma}{d|\eta_l|}$'
 experimental_data = "input/wz/Wminus_lhcb.yaml"
 
 [grids.z0_lhcb]
-path = "WZ/matrixhawaii-lhcb-z0-arxiv-1505.07024/grids/matrixhawaii-lhcb-z0-arxiv-1505.07024-xsec000.lz4"
-label = 'Z0 LHCb $\frac{d\sigma}{dy_{\ell\ell}}$'
+paths = ["WZ/matrixhawaii-lhcb-z0-arxiv-1505.07024/grids/matrixhawaii-lhcb-z0-arxiv-1505.07024-xsec000.lz4"]
+label = 'LHCb $Z$ $\frac{d\sigma}{dy_{\ell\ell}}$'
+experimental_data = "input/wz/Z_lhcb.yaml"
 
 [grids.z0_atlas]
-path = "WZ/matrixhawaii-atlas-z0-arxiv-1612.03016/grids/matrixhawaii-atlas-z0-arxiv-1612.03016-xsec000.lz4"
-label = 'Z0 ATLAS $\frac{d\sigma}{dy_{\ell\ell}}$'
+paths = ["WZ/matrixhawaii-atlas-z0-arxiv-1612.03016/grids/matrixhawaii-atlas-z0-arxiv-1612.03016-xsec000.lz4"]
+label = 'ATLAS $Z$ $\frac{d\sigma}{dy_{\ell\ell}}$'
 experimental_data = "input/wz/Zpeak_atlas.yaml"
 
 [grids.wp_atlas]
-path = "WZ/matrixhawaii-atlas-wp-arxiv-1612.03016/grids/matrixhawaii-atlas-wp-arxiv-1612.03016-xsec000.lz4"
-label = '$W^+$ ATLAS $\frac{d\sigma}{d|\eta_l|}$'
+paths = ["WZ/matrixhawaii-atlas-wp-arxiv-1612.03016/grids/matrixhawaii-atlas-wp-arxiv-1612.03016-xsec000.lz4"]
+label = 'ATLAS $W^+$ $\frac{d\sigma}{d|\eta_l|}$'
 experimental_data = "input/wz/Wplus_atlas.yaml"
 
 [grids.wp_lhcb]
-path = "WZ/matrixhawaii-lhcb-wp-arxiv-1505.07024/grids/matrixhawaii-lhcb-wp-arxiv-1505.07024-xsec000.lz4"
+paths = ["WZ/matrixhawaii-lhcb-wp-arxiv-1505.07024/grids/matrixhawaii-lhcb-wp-arxiv-1505.07024-xsec000.lz4"]
 label = '$W^+$ LHCb $\frac{d\sigma}{d|\eta_l|}$'
 experimental_data = "input/wz/Wplus_lhcb.yaml"
 
 [grids.ttbar_cms_yt]
-path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec000.lz4"
-label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dy_t}$'
+paths = ["matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec000.lz4"]
+label =  'CMS $t \bar{t}$ $\frac{d\sigma}{dy_t}$'
 experimental_data = "input/ttbar/Table_21.yaml"
 
 [grids.ttbar_cms_yttbar]
-path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec001.lz4"
-label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dy_{t\bar{t}}}$'
+paths = ["matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec001.lz4"]
+label =  'CMS $t \bar{t}$$\frac{d\sigma}{dy_{t\bar{t}}}$'
 experimental_data = "input/ttbar/Table_36.yaml"
 
 
 [grids.ttbar_cms_mttbar]
-path = "matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec002.lz4"
-label =  '$t \bar{t}$ CMS $\frac{d\sigma}{dm_{t\bar{t}}}$'
+paths = ["matrixhawaii-cms-ttbar-arxiv-1505.04480/grids/matrixhawaii-cms-ttbar-arxiv-1505.04480-xsec002.lz4"]
+label =  'CMS $t \bar{t}$ $\frac{d\sigma}{dm_{t\bar{t}}}$'
 experimental_data = "input/ttbar/Table_39.yaml"
 
-
 [grids.incjets_cms_pT]
-path = "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec4to7-pt_jet_R04.lz4"
-label = 'Incjets CMS $\frac{d^2\sigma}{d p_T dy}, \mu = p_{T,jet}$'
+paths = ["/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec4to7-pt_jet_R04.lz4"]
+label = 'CMS Incjets $\frac{d^2\sigma}{d p_T dy}, \mu = p_{T,jet}$'
+
+[grids.incjets_cms_pT_R04]
+paths = ["/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec004.lz4", "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec005.lz4","/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec006.lz4","/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec007.lz4"]
+label = 'CMS Incjets $\frac{d^2\sigma}{d p_T dy}$'
+experimental_data = "input/incjets/CMS_13TeV_R04_data_unfolding_correlated.yaml"
+
+[grids.incjets_cms_pT_R07]
+paths = ["/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec012.lz4", "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec013.lz4","/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec014.lz4","/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec015.lz4"]
+label = 'CMS Incl. jets $\frac{d^2\sigma}{d p_T dy}, \mu = p_{T,jet}, R=0.7$'
 
 [grids.incjets_cms_HT]
-path = "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec0to3-HT_parton_R04.lz4"
-label = 'Incjets CMS $\frac{d^2\sigma}{d p_T dy}, \mu = H_{T,parton}$'
+paths = ["/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec0to3-HT_parton_R04.lz4"]
+label = 'CMS Incjets $\frac{d^2\sigma}{d p_T dy}, \mu = H_{T,parton}$'
 
 [grids.dijets_cms_mjj]
-path = "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec000_4_merged.lz4"
-label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
+paths = ["/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec000.lz4","/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec001.lz4","/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec002.lz4","/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec003.lz4", "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec004.lz4"]
+label = 'CMS Dijets $\frac{d^2\sigma}{d M_{jj} dy}$'
 
-[grids.dijets_cms_mjj_0]
-path = "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec000.lz4"
-label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
+[grids.dijets_cms_mjj_merged]
+paths = ["/home/jnieh/uni/downloads/grids/applfast-cms-dijets-appl-arxiv-1212.6660/grids/cms-dijets-appl-arxiv-1212.6660-xsec000_4_merged.lz4"]
+label = 'CMS Dijets $\frac{d^2\sigma}{d M_{jj} dy}$'
 
-[grids.dijets_cms_mjj_0v2]
-path = "/home/jnieh/uni/downloads/grids/applfast-cms-dijets-v2-fc-fnlo-arxiv-1212.6660/grids/cms-dijets-v2-fc-fnlo-arxiv-1212.6660-xsec000.lz4"
-label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 
 
@@ -74,26 +80,31 @@ label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 [output]
 #process_grid = ["dijets"]
-#process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT", "dijets_cms_mjj","ttbar_cms_yt"]
-process_grid = ["z0_lhcb"]
-#process_grid = ["wm_lhcb", "wm_atlas"]
-#process_grid = ["wm_lhcb", "wp_lhcb", "z0_lhcb"]
+#process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT_R04", "dijets_cms_mjj","ttbar_cms_yt"]
+#process_grid = ["ttbar_cms_yttbar"]
+#process_grid = ["wm_lhcb", "wm_atlas", "wp_atlas", "wp_lhcb", "z0_atlas", "z0_lhcb"]
+process_grid = ["wm_lhcb", "wp_lhcb", "z0_lhcb"]
+#process_grid = ["dijets_cms_mjj"]
+#process_grid = ["dijets_cms_mjj", "dijets_cms_mjj_merged"]
 #process_grid= ["ttbar_cms_yttbar", "ttbar_cms_mttbar"]
 #process_grid= ["dijets_cms_mjj_0","dijets_cms_mjj_0v2"]
 #process_grid = ["wp_atlas", "wm_atlas", "z0_atlas"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
-detail = true #true or false
-path_plot = "output/plots/thesis/lhcb/NNLO_onlyz0_gleg.pdf"
+detail = false #true or false
+path_plot = "output/plots/og_thesis/DY/lhcb_vs_born.pdf"
+
 plot_style = "heatmap" # heatmap or boundary. Heatmap only adviced for single observables
+
 support_group_weighting = "grids" # "grids" or "bins"; only used in supp mode
+
 #subtitle = '$d \bar u$-initial channel, $d$-quark projection'
 
-#[output.groups]
+[output.groups]
 #"TTbar" = ["ttbar_cms_yt", "ttbar_cms_yttbar", "ttbar_cms_mttbar"]
 #"W Production" = ["wm_atlas", "wm_lhcb","wp_atlas","wp_lhcb"]
 #"Z Produciton" = ["z0_atlas", "z0_lhcb"]
-'LHCb $W^\pm, Z \rightarrow \mu$' = ["z0_lhcb", "wm_lhcb", "wp_lhcb"]
-#'ATLAS $W^\pm, Z \rightarrow \ell$'  = ["z0_atlas", "wm_atlas", "wp_atlas"]
+'LHCb $W^\pm, Z$' = ["z0_lhcb", "wm_lhcb", "wp_lhcb"]
+#'ATLAS $W^\pm, Z$'  = ["z0_atlas", "wm_atlas", "wp_atlas"]
 #"Jets" = ["dijets", "incjets_cms"]
 
 
@@ -112,9 +123,9 @@ threshold = 0.9
 [selection_conf]
 pdf = "CT18NNLO"
 #channels = ["7-20"] 
-#channels = ["0-1"]
+#channels = [0,25]
 #channels = ["1-6", "21-24", "26-82"]
-leg_pdgs = [0]
+#leg_pdgs = [0]
 #leg_pdgs =  [1,2,3,4,5, -1,-2,-3,-4,-5]
 #pdgs = [2] #use zero for gluon per default
-max_as = 2 # We always take the highest a_ew order if available
+#max_as = 2 # We always take the highest a_ew order if available

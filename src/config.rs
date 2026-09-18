@@ -156,7 +156,7 @@ fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D
 
 #[derive(Debug, Deserialize)]
 struct GridEntry {
-    path: PathBuf,
+    paths: Vec<PathBuf>,
     label: String,
     experimental_data: Option<PathBuf>,
 }
@@ -372,14 +372,21 @@ pub fn read_config(config_path: &Path) -> Result<GridConfig> {
 }
 
 /// Resolves the full filesystem path for a configured grid name. Get the file_name for a certain grid
-pub fn resolve_grid_path(config: &GridConfig, grid_name: &str) -> Result<PathBuf> {
-    let file_name = config.grids
-        .get(grid_name)
-        .ok_or_else(|| { anyhow!("grid '{grid_name}' is not defined in the configuration file") })?;
+pub fn resolve_grid_paths(config: &GridConfig, grid_name: &str) -> Result<Vec<PathBuf>> {
 
-    //check
+    let Some(grid) = config.grids.get(grid_name) else {
+        anyhow::bail!("grid '{grid_name}' is not defined");
+    };
 
-    Ok(config.path_to_grids.join(&file_name.path))
+    if grid.paths.is_empty() {
+        anyhow::bail!("grid '{grid_name}' contains no paths");
+    }
+
+    Ok(grid
+        .paths
+        .iter()
+        .map(|path| config.path_to_grids.join(path))
+        .collect())
 }
 
 #[cfg(test)]
