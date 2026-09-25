@@ -137,6 +137,25 @@ fn load_bin_support_grid_with_counts(
         write_q2xcontrib_csv(&summed_points_x1, &summed_points_x2, &path)?;
     }
 
+    if let Some(bins) = selection.bins() {
+        let number_bins = combined_kinematics.len();
+
+        for &bin in bins {
+            if bin >= number_bins {
+                anyhow::bail!(
+                    "bin index {bin} is out of range for '{grid_name}': \
+                 the grid contains {number_bins} bins"
+                );
+            }
+        }
+        combined_kinematics = combined_kinematics
+            .into_iter()
+            .enumerate()
+            .filter(|(index, _)| bins.binary_search(index).is_ok())
+            .map(|(_, contributions)| contributions)
+            .collect();
+    }
+
     // Build the normalized support map from the three-dimensional auxiliary binning.
     let grid_spec = config.grid_spec();
 
@@ -274,7 +293,7 @@ fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid], mode: Mode) -> Re
     }
 
     let status = Command::new("python3")
-        .arg("python/plot_auxgrid_copy.py")
+        .arg("python/plot_auxgrid.py")
         .arg(tmp_file.path())
         .arg(plot_path)
         .arg(config.plot_style())
@@ -347,7 +366,13 @@ fn run_support(config: &GridConfig) -> Result<()> {
 }
 
 fn run_sensitivity(config: &GridConfig) -> Result<()> {
-    // final plot path
+    //bin selection not implemented for sensititivy mode
+    if config.selection().iter().any(|selection| selection.bins().is_some()) {
+        anyhow::bail!(
+            "bin selection is currently supported only in supp mode"
+        );
+    }
+
     let plot_path = config.plot_path();
 
     let overwrite = confirm_overwrite(plot_path)?;

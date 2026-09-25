@@ -190,6 +190,9 @@ This block selects the PDF, perturbative orders, partonic channels, and incoming
 - `pdgs`: optional initial-state PDG selection
 - `channels`: optional list of zero-based PineAPPL channel indices
 - `leg_pdgs`: optional list of PDGs whose matching incoming legs are projected
+- `bins`: optional observable-bin selection, available only in `supp` mode. Indices are zero-based; integers and inclusive quoted ranges use the same syntax as `channels`.
+
+For example, `bins = [3]` selects only the fourth observable bin; `bins = [1, "3-5"]` averages the support maps of the selected bins. Omit `bins` to use all bins; empty lists and out-of-range indices are rejected. The selection applies to each processed grid. For a grid with multiple `paths`, indices refer to the concatenated bins in the listed file order. Bin selection is rejected in `sense` mode.
 
 There are three projection modes.
 

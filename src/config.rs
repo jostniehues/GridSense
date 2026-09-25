@@ -81,28 +81,30 @@ struct SelectionConfig {
     #[serde(default)]
     leg_pdgs: Option<Vec<i32>>,
     max_as: Option<u8>,
-    #[serde(default, deserialize_with = "deserialize_channels")]
+    #[serde(default, deserialize_with = "deserialize_indices")]
     channels: Option<Vec<usize>>,
     pdf: String,
+    #[serde(default, deserialize_with = "deserialize_indices")]
+    bins: Option<Vec<usize>>
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-enum ChannelItem {
+enum IndexItem {
     Index(usize),
     Range(String),
 }
 
-fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D::Error>
+fn deserialize_indices<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D::Error>
     where D: Deserializer<'de>
 {
-    let Some(items) = Option::<Vec<ChannelItem>>::deserialize(deserializer)? else {
+    let Some(items) = Option::<Vec<IndexItem>>::deserialize(deserializer)? else {
         return Ok(None);
     };
 
     if items.is_empty() {
         return Err(
-            de::Error::custom("channels must not be empty; omit the field to select all channels")
+            de::Error::custom("indey selection must not be empty; omit the field to select all channels")
         );
     }
 
@@ -110,10 +112,10 @@ fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D
 
     for item in items {
         match item {
-            ChannelItem::Index(index) => {
+            IndexItem::Index(index) => {
                 channels.insert(index);
             }
-            ChannelItem::Range(value) => {
+            IndexItem::Range(value) => {
                 let value = value.trim();
 
                 if let Some((start, end)) = value.split_once('-') {
@@ -121,7 +123,7 @@ fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D
                         .trim()
                         .parse::<usize>()
                         .map_err(|_| {
-                            de::Error::custom(format!("invalid channel range '{value}'"))
+                            de::Error::custom(format!("invalid index range '{value}'"))
                         })?;
                     let end = end
                         .trim()
@@ -133,7 +135,7 @@ fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D
                     if start > end {
                         return Err(
                             de::Error::custom(
-                                format!("channel range '{value}' has decreasing bounds")
+                                format!("index range '{value}' has decreasing bounds")
                             )
                         );
                     }
@@ -143,7 +145,7 @@ fn deserialize_channels<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D
                     let index = value
                         .parse::<usize>()
                         .map_err(|_| {
-                            de::Error::custom(format!("invalid channel index '{value}'"))
+                            de::Error::custom(format!("invalid index index '{value}'"))
                         })?;
                     channels.insert(index);
                 }
@@ -167,6 +169,7 @@ pub struct Selection {
     max_as: Option<u8>,
     leg_pdgs: Option<Vec<i32>>,
     channels: Option<Vec<usize>>,
+    bins: Option<Vec<usize>>,
 }
 
 /// Getter functions
@@ -280,6 +283,7 @@ impl SelectionConfig {
                         leg_pdgs: None,
                         max_as: self.max_as,
                         channels: None,
+                        bins: self.bins.clone()
                     })
                     .collect(),
 
@@ -289,6 +293,7 @@ impl SelectionConfig {
                     leg_pdgs: self.leg_pdgs.clone(),
                     max_as: self.max_as,
                     channels: self.channels.clone(),
+                    bins: self.bins.clone()
                 }],
         }
     }
@@ -351,6 +356,10 @@ impl Selection {
     }
     pub fn leg_pdgs(&self) -> Option<&[i32]> {
         self.leg_pdgs.as_deref()
+    }
+
+    pub fn bins(&self) -> Option<&[usize]> {
+        self.bins.as_deref()
     }
 }
 

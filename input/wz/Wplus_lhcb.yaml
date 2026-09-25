@@ -34,7 +34,7 @@ uncertainties:
     kind: "correlated"
     unit: "absolute"
     per_bin: [3.5, 3.1, 2.1, 1.6, 1.3, 0.9, 0.7, 0.4]
-    correlation_matrix:
+    correlation_matrix: #Only correlation in the data set. We only investigate Z anyway
       - [1, -0.15, -0.03, 0.2, -0.03, -0.12, 0.02, -0.01]
       - [-0.15, 1, 0.27, -0.1, 0.28, 0.36, 0.18, 0.17]
       - [-0.03, 0.27, 1, 0, 0.2, 0.22, 0.15, 0.14]

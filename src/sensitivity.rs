@@ -66,7 +66,7 @@ enum UncertaintyUnit {
 
 type CovarianceMatrix = DMatrix<f64>;
 
-/// Read the YAML format (simplified HepData version).
+/// Read the YAML format (this is a simplified HepData version).
 pub(crate) fn read_experimental_data(path: &Path) -> Result<ExperimentalData> {
     let file = File::open(path).with_context(||
         format!("could not open experimental data '{}'", path.display())
@@ -131,8 +131,7 @@ fn relative_shifts(data: &ExperimentalData, source: &UncertaintySource) -> Resul
     Ok(shifts)
 }
 
-/// Construct one relative covariance matrix for several data sets. Correlated
-/// sources with the same name share one nuisance parameter across data sets.
+/// Construct one relative covariance matrix for several data sets.
 fn construct_joint_covariance(data_sets: &[&ExperimentalData]) -> Result<CovarianceMatrix> {
     let total_bins: usize = data_sets
         .iter()

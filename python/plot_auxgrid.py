@@ -14,13 +14,13 @@ mpl.rcParams.update({
     "font.serif": ["cmr10"],
     "mathtext.fontset": "cm",
     "axes.formatter.use_mathtext": True,
-    "font.size": 7,
-    "axes.labelsize": 9,
-    "axes.titlesize": 9,
+    "font.size": 8,
+    "axes.labelsize": 10,
+    "axes.titlesize": 10,
     "figure.titlesize": 10,
     "xtick.labelsize": 7,
     "ytick.labelsize": 7,
-    "legend.fontsize": 6,
+    "legend.fontsize": 9,
     "axes.labelpad": 2,
     "figure.constrained_layout.w_pad": 0.005,
     "figure.constrained_layout.h_pad": 0.005,
@@ -161,13 +161,13 @@ def main() -> int:
         return 1
 
     colors = [
-        "#079B80",
         "#C87524",
-        "#604A96",
+        "#079B80",
+        "#B65379",
         "#728F48",
+        "#604A96",
         "#A53D50",
         "#916333",
-        "#B65379",
         "#386F94",
     ]
 
@@ -305,6 +305,7 @@ def main() -> int:
                     cmap=gradient,
                     vmin=0.0,
                     vmax=maximum,
+                    #vmax=0.14,
                     edgecolors=(1.0, 1.0, 1.0, 0.18),
                     linewidth=0.25,
                     alpha=0.95,
