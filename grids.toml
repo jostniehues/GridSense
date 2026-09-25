@@ -95,7 +95,7 @@ process_grid = [ "z0_lhcb", "z0_atlas",  "dijets_cms_mjj","incjets_cms_pT_R04", 
 #process_grid = ["wp_atlas", "wm_atlas", "z0_atlas"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/og_thesis/overview/new_col/p5_allorder_CT18NNLO.pdf"
+path_plot = "output/plots/og_thesis/overview/stab/nx17_nmu_11.pdf"
 
 plot_style = "boundary" # heatmap or boundary. Heatmap only adviced for single observables
 
@@ -115,13 +115,13 @@ support_group_weighting = "grids" # "grids" or "bins"; only used in supp mode
 
 #configuration of the grid that is plotted later (auxilary grid)
 [config]
-nx_x = 22
-nx_q2 = 15
+nx_x = 17
+nx_q2 = 11
 x_min = 0.0001
 x_max = 1.0
 q2_min = 1000.0
 q2_max = 100000000.0
-threshold = 0.5
+threshold = 0.9
 
 
 [selection_conf]
