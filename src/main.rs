@@ -181,8 +181,7 @@ fn run() -> Result<()> {
 }
 
 /// Export the calculated auxiliary grids and pass them to the Python plotter.
-/// ToDo: Pass Mode (Sense or Supp) to do specific adjustmend
-fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid]) -> Result<()> {
+fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid], mode: &str) -> Result<()> {
     let plot_path = config.plot_path();
     let plot_datasets: Vec<_> = aux_grids
         .iter()
@@ -207,6 +206,7 @@ fn plot_aux_grids(config: &GridConfig, aux_grids: &[PlotGrid]) -> Result<()> {
     .arg(tmp_file.path())
     .arg(plot_path)
     .arg(config.plot_style())
+    .arg(mode)
     .arg(config.subtitle().unwrap_or(""))
     .status()
     .context("could not start python plotting script")?;
@@ -275,7 +275,7 @@ fn run_support(config: &GridConfig) -> Result<()> {
         }
     }
 
-    plot_aux_grids(config, &aux_grids)
+    plot_aux_grids(config, &aux_grids, "supp")
 }
 
 fn run_sensitivity(config: &GridConfig) -> Result<()> {
@@ -316,5 +316,5 @@ fn run_sensitivity(config: &GridConfig) -> Result<()> {
         }
     }
 
-    plot_aux_grids(config, &aux_grids)
+    plot_aux_grids(config, &aux_grids, "sense")
 }

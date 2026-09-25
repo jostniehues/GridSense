@@ -45,7 +45,7 @@ experimental_data = "input/ttbar/Table_39.yaml"
 
 [grids.incjets_cms_pT]
 path = "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec4to7-pt_jet_R04.lz4"
-label = 'Incjets CMS $\frac{d^2\sigma}{d p_T dy}, \mu = p_{T,jet}$'
+label = 'Incjets CMS $\frac{d^2\sigma}{d p_T dy}$'
 
 [grids.incjets_cms_HT]
 path = "/home/jnieh/uni/downloads/grids/applfast-cms-incjets-appl-arxiv-2111.10431/grids/pineappl/cms-incjets-appl-arxiv-2111.10431-xsec0to3-HT_parton_R04.lz4"
@@ -60,7 +60,7 @@ label = 'Dijets CMS 7TEV $\frac{d^2\sigma}{d M_{jj} dy}$'
 
 [output]
 #process_grid = ["dijets"]
-process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT", "dijets_cms_mjj","ttbar_cms_yt"]
+process_grid = [ "z0_lhcb", "z0_atlas", "dijets_cms_mjj", "incjets_cms_pT","ttbar_cms_yt"]
 #process_grid = ["z0_lhcb", "incjets_cms_pT", "wm_atlas"]
 #process_grid = ["wm_lhcb", "wm_atlas"]
 #process_grid = ["wm_lhcb", "wp_lhcb", "z0_lhcb", "wm_atlas", "wp_atlas", "z0_atlas"]
@@ -68,7 +68,7 @@ process_grid = [ "z0_lhcb", "z0_atlas", "incjets_cms_pT", "dijets_cms_mjj","ttba
 #process_grid= ["wp_atlas"]
 #process_grid= ["incjets_cms_pT","incjets_cms_HT"]
 detail = false #true or false
-path_plot = "output/plots/thesis/overall_map/p_90_grid_25_18.pdf"
+path_plot = "output/plots/og_thesis/overview/stab/shift_05.pdf"
 plot_style = "boundary" # or boundary. Heatmap only adviced for single observables
 #subtitle = '$d \bar u$-initial channel, $d$-quark projection'
 
@@ -84,10 +84,10 @@ plot_style = "boundary" # or boundary. Heatmap only adviced for single observabl
 
 #configuration of the grid that is plotted later (auxilary grid)
 [config]
-nx_x = 25
-nx_q2 = 18
-phase_x = 0.0
-phase_q2 = 0.0
+nx_x = 22
+nx_q2 = 15
+phase_x = 0.5
+phase_q2 = 0.5
 x_min = 0.0001
 x_max = 1.0
 q2_min = 1000.0

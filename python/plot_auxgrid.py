@@ -1,11 +1,30 @@
 import json
 import sys
 
+import matplotlib as mpl
 from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap, to_rgb
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Rectangle
 import matplotlib.pyplot as plt
 import numpy as np
+
+mpl.rcParams.update({
+    "text.usetex": False,
+    "font.family": "serif",
+    "font.serif": ["cmr10"],
+    "mathtext.fontset": "cm",
+    "axes.formatter.use_mathtext": True,
+    "font.size": 8,
+    "axes.labelsize": 10,
+    "axes.titlesize": 10,
+    "figure.titlesize": 10,
+    "xtick.labelsize": 7,
+    "ytick.labelsize": 7,
+    "legend.fontsize": 9,
+    "axes.labelpad": 2,
+    "figure.constrained_layout.w_pad": 0.005,
+    "figure.constrained_layout.h_pad": 0.005,
+})
 
 
 def pdg_title(pdg):
@@ -35,7 +54,6 @@ def as_title(order):
         return f"All Orders"
     return rf"Up to $\alpha_s^{order}$"
     
-
 
 
 
@@ -69,6 +87,7 @@ def support_boundary_segments(x_edges, q2_edges, selected):
 def single_color_map(color, name):
     """Build a light-to-full gradient from one process color."""
     rgb = np.asarray(to_rgb(color))
+    #light_rgb = 1.0 - 0.50 * (1.0 - rgb)
     light_rgb = 1.0 - 0.15 * (1.0 - rgb)
     return LinearSegmentedColormap.from_list(
         f"{name}_gradient",
@@ -76,11 +95,46 @@ def single_color_map(color, name):
     )
 
 
+def draw_overlap(ax, grouped_support):
+    """Hatch cells selected by at least two displayed support maps."""
+    supports = list(grouped_support.values())
+    if len(supports) < 2:
+        return
+
+    reference = supports[0]
+    x_edges = reference["x_edges"]
+    q2_edges = reference["q2_edges"]
+    overlap_count = np.zeros_like(reference["selected"], dtype=np.uint16)
+
+    for support in supports:
+        if not (
+            np.array_equal(x_edges, support["x_edges"])
+            and np.array_equal(q2_edges, support["q2_edges"])
+        ):
+            return
+        overlap_count += support["selected"]
+
+    overlap = overlap_count >= 2
+    for iq, ix in np.argwhere(overlap):
+        ax.add_patch(
+            Rectangle(
+                (x_edges[ix], q2_edges[iq]),
+                x_edges[ix + 1] - x_edges[ix],
+                q2_edges[iq + 1] - q2_edges[iq],
+                facecolor=(0.2, 0.2, 0.2, 0.10),
+                edgecolor=(0.12, 0.12, 0.12, 0.30),
+                linewidth=0.0,
+                hatch="///",
+                zorder=2.5,
+            )
+        )
+
+
 def main() -> int:
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 6:
         print(
             "usage: python/plot_auxgrid.py "
-            "<input.json> <output.pdf> <plot-style> <subtitle>",
+            "<input.json> <output.pdf> <plot-style> <mode> <subtitle>",
             file=sys.stderr,
         )
         return 1
@@ -88,10 +142,15 @@ def main() -> int:
     input_json = sys.argv[1]
     output_pdf = sys.argv[2]
     plot_style = sys.argv[3]
-    subtitle = sys.argv[4]
+    mode = sys.argv[4]
+    subtitle = sys.argv[5]
 
     if plot_style not in {"boundary", "heatmap"}:
         print(f"unknown plot style: {plot_style}", file=sys.stderr)
+        return 1
+
+    if mode not in {"supp", "sense"}:
+        print(f"unknown mode: {mode}", file=sys.stderr)
         return 1
 
     with open(input_json, encoding="utf-8") as handle:
@@ -102,14 +161,14 @@ def main() -> int:
         return 1
 
     colors = [
-        "#1f77b4",
-        "#ff7f0e",
-        "#2ca02c",
-        "#d62728",
-        "#9467bd",
-        "#8c564b",
-        "#e377c2",
-        "#17becf",
+        "#C87524",
+        "#079B80",
+        "#B65379",
+        "#728F48",
+        "#604A96",
+        "#A53D50",
+        "#916333",
+        "#386F94",
     ]
 
     line_styles = [
@@ -144,7 +203,7 @@ def main() -> int:
             legend_handles[style_key] = Patch(
                 facecolor=grid_colors[style_key],
                 edgecolor=grid_colors[style_key],
-                linewidth=1.8,
+                linewidth=1.0,
                 linestyle=grid_linestyles[style_key],
                 label=style_label,
                 alpha=0.55,
@@ -154,14 +213,16 @@ def main() -> int:
 
     ordered_pdgs = sorted(pdg_groups, key=lambda pdg: (-1 if pdg is None else pdg))
     ncols = len(ordered_pdgs)
+    plot_width_in = 0.46 * 426.79135 / 72.27 
     fig, axes = plt.subplots(
         1,
         ncols,
-        figsize=(6.4 * ncols, 6.8),
+        figsize=(plot_width_in, plot_width_in),
         constrained_layout=True,
         squeeze=False,
     )
     axes = axes[0]
+    heatmap_colorbars = {ax: [] for ax in axes}
 
     for ax, pdg in zip(axes, ordered_pdgs):
         grouped_support = {}
@@ -197,16 +258,16 @@ def main() -> int:
             grid_x_edges,
             grid_q2_edges[0],
             grid_q2_edges[-1],
-            colors=(0.15, 0.15, 0.15, 0.48),
-            linewidth=0.65,
+            colors=(0.15, 0.15, 0.15, 0.28),
+            linewidth=0.45,
             zorder=0,
         )
         ax.hlines(
             grid_q2_edges,
             grid_x_edges[0],
             grid_x_edges[-1],
-            colors=(0.15, 0.15, 0.15, 0.48),
-            linewidth=0.65,
+            colors=(0.15, 0.15, 0.15, 0.28),
+            linewidth=0.45,
             zorder=0,
         )
 
@@ -227,11 +288,10 @@ def main() -> int:
                     cmap=plt.matplotlib.colors.ListedColormap([color]),
                     vmin=0.0,
                     vmax=1.0,
-                    # Keep the auxiliary-grid resolution visible without letting
-                    # black cell edges dominate overlapping process regions.
-                    edgecolors=(1.0, 1.0, 1.0, 0.28),
+                    # White cell edges keep the auxiliary-grid resolution visible.
+                    edgecolors=(1.0, 1.0, 1.0, 0.18),
                     linewidth=0.25,
-                    alpha=0.38,
+                    alpha=0.55,
                 )
             else:
                 visible_weights = np.ma.masked_where(~selected, weights)
@@ -245,12 +305,12 @@ def main() -> int:
                     cmap=gradient,
                     vmin=0.0,
                     vmax=maximum,
-                    edgecolors=(0.0, 0.0, 0.0, 0.35),
-                    linewidth=0.15,
+                    #vmax=0.14,
+                    edgecolors=(1.0, 1.0, 1.0, 0.18),
+                    linewidth=0.25,
+                    alpha=0.95,
                 )
-                colorbar = fig.colorbar(mesh, ax=ax, pad=0.02)
-                colorbar.set_label(r"$W_z$", fontsize=13)
-                colorbar.ax.tick_params(labelsize=10)
+                heatmap_colorbars[ax].append(mesh)
 
             boundary = support_boundary_segments(
                 x_edges,
@@ -262,51 +322,80 @@ def main() -> int:
                     LineCollection(
                         boundary,
                         colors=[color],
-                        linewidths=2.2,
+                        linewidths=1.2,
                         linestyles=grid_linestyles[style_key],
                         alpha=0.95,
                         zorder=3,
                     )
                 )
 
+        draw_overlap(ax, grouped_support)
+
         ax.set_xscale("log")
         ax.set_yscale("log")
         title = pdg_title(pdg)
         if title is not None:
-            ax.set_title(title, fontsize=16)
-        ax.set_xlabel(r"$x$", fontsize=18)
-        ax.tick_params(axis="both", which="major", labelsize=13, width=1.0, length=6)
+            ax.set_title(title)
+        ax.set_xlabel(r"$x$")
+        ax.tick_params(axis="both", which="major", width=1.0, length=6)
         ax.minorticks_off()
 
         for spine in ax.spines.values():
             spine.set_linewidth(1.1)
 
-    axes[0].set_ylabel(r"$\mu^2\;[\mathrm{GeV}^2]$", fontsize=18)
+    axes[0].set_ylabel(r"$\mu^2\;[\mathrm{GeV}^2]$")
 
     title_as = as_title(max_as)
-    figure_title = rf"$\mathtt{{GridSense}}$ Kinematic Support. {title_as}"
+    figure_title = f"Kinematic Support — {title_as}"
     if subtitle:
         figure_title += "\n"
-    fig.suptitle(figure_title, fontsize=20,)
+    #fig.suptitle(figure_title)
     if subtitle:
-        fig.text(0.5, 0.94, subtitle, ha="center", va="top", fontsize=14)
+        fig.text(0.5, 0.94, subtitle, ha="center", va="top")
 
-    fig.legend(
+    axes[-1].legend(
         handles=list(legend_handles.values()),
-        title="Processes",
-        loc="center left",
-        bbox_to_anchor=(1.01, 0.5),
-        bbox_transform=fig.transFigure,
-        frameon=True,
-        fontsize=12.5,
-        title_fontsize=13,
-        labelspacing=0.65,
-        handletextpad=0.55,
-        borderpad=0.65,
-        borderaxespad=0.0,
+        loc="best",
+        frameon=False,
+        labelspacing=0.35,
+        handlelength=1.5,
+        handletextpad=0.4,
+        borderaxespad=0.3,
     )
 
-    fig.savefig(output_pdf, bbox_inches="tight")
+    if plot_style == "heatmap":
+        # Preserve the boundary-mode axes size; colorbars add physical width.
+        fig.canvas.draw()
+        positions = {ax: ax.get_position().frozen() for ax in axes}
+        original_width, height = fig.get_size_inches()
+        colorbar_slot_in = 0.65
+        expanded_width = original_width + colorbar_slot_in * sum(
+            len(meshes) for meshes in heatmap_colorbars.values()
+        )
+        fig.set_layout_engine(None)
+        fig.set_size_inches(expanded_width, height)
+        offset_in = 0.0
+        for ax in axes:
+            position = positions[ax]
+            left_in = position.x0 * original_width + offset_in
+            width_in = position.width * original_width
+            ax.set_position([
+                left_in / expanded_width, position.y0,
+                width_in / expanded_width, position.height,
+            ])
+            for index, mesh in enumerate(heatmap_colorbars[ax]):
+                colorbar_left_in = (
+                    left_in + width_in + 0.08 + index * colorbar_slot_in
+                )
+                colorbar_ax = fig.add_axes([
+                    colorbar_left_in / expanded_width, position.y0,
+                    0.08 / expanded_width, position.height,
+                ])
+                colorbar = fig.colorbar(mesh, cax=colorbar_ax)
+                colorbar.set_label(r"$W_z$" if mode == "supp" else r"$S_z$")
+            offset_in += len(heatmap_colorbars[ax]) * colorbar_slot_in
+
+    fig.savefig(output_pdf, bbox_inches="tight", pad_inches=0.022)
     plt.close(fig)
     return 0
 
