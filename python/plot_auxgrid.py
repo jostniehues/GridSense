@@ -220,7 +220,7 @@ def main() -> int:
     fig, axes = plt.subplots(
         1,
         ncols,
-        figsize=(plot_width_in, plot_width_in),
+        figsize=(ncols * plot_width_in, plot_width_in),
         constrained_layout=True,
         squeeze=False,
     )
