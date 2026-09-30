@@ -58,8 +58,7 @@ Rust writes a temporary JSON file and passes its path plus the final PDF path to
 
 ## Running
 
-Run commands from the repository root. Create your local configuration from the
-tracked example:
+Run commands from the repository root. Copy the example configuration:
 
 ```bash
 cp examples/grids.toml grids.toml
@@ -71,9 +70,9 @@ Edit `grids.toml` to set your grid paths and an installed LHAPDF set, then run:
 cargo run -- --config grids.toml
 ```
 
-The local `grids.toml` is ignored by Git; keep reusable example changes in
-[examples/grids.toml](examples/grids.toml). Relative paths are resolved from the
-working directory, not from the configuration file's directory.
+Use absolute paths or paths relative to the repository root for `path_to_grids`,
+`experimental_data`, and `path_plot`. Relative entries in `paths` are resolved
+against `path_to_grids`.
 
 ## `grids.toml`
 
@@ -123,7 +122,7 @@ max_as = 1
 
 ### `path_to_grids`
 
-This is a base directory used together with relative grid paths.
+Base directory for relative entries in `paths`. 
 
 ### `[grids.<name>]`
 
@@ -132,7 +131,7 @@ more PineAPPL interpolation grids.
 
 Fields:
 
-- `paths`: non-empty list of paths to `.lz4` files
+- `paths`: non-empty list of paths to `.lz4` files. Each entry can be absolute or relative to `path_to_grids`; absolute entries are used directly. Both forms can be mixed in one list.
 - `label`: legend label used in the plot
 - `experimental_data`: path to the uncertainty YAML file, required for `--mode sense`
 
@@ -186,7 +185,7 @@ This block controls what gets plotted and where the final PDF is written.
 
 - `process_grid`: list of grid names to process
 - `path_plot`: output path for the generated PDF
-- `detail`: (bool). If a .csv should be generated per grid writing (bin,q2,x,contrib) for each        interpolation grid node.
+- `detail`: enables additional CSV exports without changing the plot: projected contributions in `output/data/contrib/<grid_name>.csv` (`supp` only), and normalized per-bin support weights in `output/data/support/<grid_name>.csv` (both modes, before averaging, sensitivity calculation, and threshold selection). With multiple `pdgs` selections, only the last selection's exports remain because filenames are reused.
 - `subtitle`: optional subtitle. Matplotlib math text can be embedded between `$` delimiters. In TOML, a literal string avoids escaping LaTeX backslashes, for example `subtitle = 'Born level: $\mu^2 = M_W^2$'`.
 - `output.groups`: optional named groups. Group members share one color and line style and are plotted as one combined area with a common outer boundary. Every grouped grid must also occur in `process_grid`.
 - `support_group_weighting`: global weighting of grouped support maps in `supp` mode. `"grids"` gives every grid equal weight, independently of its number of observable bins. `"bins"` combines all observable bins first and gives every bin equal weight. The default is `"grids"`; the setting does not affect `sense` mode.
@@ -282,7 +281,7 @@ pdgs + channels          rejected
 pdgs + leg_pdgs          rejected
 ```
 
-If none of `pdgs`, `channels`, or `leg_pdgs` is given, all channel entries and both incoming legs are used. Both `0` and `21` denote the gluon in `pdgs` and `leg_pdgs`; the examples use `0`. PineAPPL's `convolve_extract_kinematics` normalizes these IDs to the grid convention internally. Electroweak orders are retained up to the maximum available for the grid.
+If none of `pdgs`, `channels`, or `leg_pdgs` is given, all channel entries and both incoming legs are used. Both `0` and `21` denote the gluon in `pdgs` and `leg_pdgs`; the examples use `0`. Electroweak orders are retained up to the maximum available for the grid.
 
 ## Labels and LaTeX-style text
 
@@ -299,4 +298,4 @@ The project may currently create:
 
 The CSV is currently a fixed debug-style output and may change later.
 
-The temporary JSON sent to Python is not meant to be kept.
+
