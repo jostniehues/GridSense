@@ -82,7 +82,7 @@ label = "DY"
 
 
 [output]
-process_grid = ["z0_atlas"]
+process_grid = ["ttbar_cms_yttbar"]
 #process_grid = [ "z0_lhcb", "z0_atlas",  "dijets_cms_mjj","incjets_cms_pT_R04", "ttbar_cms_yt"]
 #process_grid = ["ttbar_cms_yttbar"]
 #process_grid = ["wm_lhcb", "wm_atlas", "wp_atlas", "wp_lhcb", "z0_atlas", "z0_lhcb"]
@@ -96,7 +96,7 @@ process_grid = ["z0_atlas"]
 #process_grid = ["wp_atlas", "wm_atlas", "z0_atlas"]
 #process_grid= ["incjets_cms_pT_R07","incjets_cms_pT_R04"]
 detail = false #true or false
-path_plot = "output/plots/og_thesis/dy_r2.pdf"
+path_plot = "output/plots/og_thesis/ttbarcheck.pdf"
 
 plot_style = "heatmap" # heatmap or boundary. Heatmap only adviced for single observables
 
@@ -121,19 +121,19 @@ nx_q2 = 15
 x_min = 0.0001
 x_max = 1.0
 q2_min = 1000.0
-q2_max = 100000000.0
+q2_max = 1000000.0
 threshold = 0.9
 
 
 [selection_conf]
 pdf = "CT18NNLO" #MSHT20nnlo_as118,NNPDF40_nnlo_as_01180
-#channels = ["7-20"] 
+channels = ["7-20"] 
 #channels = ["21"] 
 #channels = [0,25]
 #channels = ["1-6", "21-24", "26-82"]
-#leg_pdgs = [0]
+leg_pdgs = [21]
 #leg_pdgs =  [1,2,3,4,5, -1,-2,-3,-4,-5]
 #pdgs = [2,3] #use zero for gluon per defaultX
-pdgs = [21]
+#pdgs = [21]
 #max_as = 2 # We always take the highest a_ew order if available
 #bins = [9]
