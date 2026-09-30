@@ -58,17 +58,27 @@ Rust writes a temporary JSON file and passes its path plus the final PDF path to
 
 ## Running
 
-The project is configured through `grids.toml`.
+Run commands from the repository root. Create your local configuration from the
+tracked example:
 
-Run it with:
+```bash
+cp examples/grids.toml grids.toml
+```
+
+Edit `grids.toml` to set your grid paths and an installed LHAPDF set, then run:
 
 ```bash
 cargo run -- --config grids.toml
 ```
 
+The local `grids.toml` is ignored by Git; keep reusable example changes in
+[examples/grids.toml](examples/grids.toml). Relative paths are resolved from the
+working directory, not from the configuration file's directory.
+
 ## `grids.toml`
 
-The main configuration file is `grids.toml`.
+The default configuration file is `grids.toml`. A compact template is provided in
+[examples/grids.toml](examples/grids.toml); the sections below describe its options.
 
 ### Example
 
@@ -124,6 +134,7 @@ Fields:
 
 - `paths`: non-empty list of paths to `.lz4` files
 - `label`: legend label used in the plot
+- `experimental_data`: path to the uncertainty YAML file, required for `--mode sense`
 
 The section name `wm_atlas` is the internal grid name. You later reference that name in `output.process_grid`.
 
@@ -154,6 +165,20 @@ appends all bins and then evaluates $W_z$ once, giving every retained observable
 bin equal weight. In sensitivity mode, the configured `experimental_data` file
 must contain the same total number of bins in the same order as the concatenated
 grid files.
+
+### Experimental data example
+
+[examples/experimental_data.yaml](examples/experimental_data.yaml) contains three
+synthetic bins with central values, uncorrelated absolute uncertainties, and
+correlated relative uncertainties with and without an explicit correlation matrix.
+Relative uncertainties are fractions (`0.03` means 3%); absolute uncertainties use
+the same units as the central values.
+
+This is a format example, not measured data or a matching data set for an included
+PineAPPL grid. Before enabling `experimental_data` in `grids.toml` and running
+`cargo run -- --config grids.toml --mode sense`, supply your grid and adapt the YAML
+to its bin count and order. The `ranges` entries are descriptive metadata; the
+reader matches bins by position, not by their ranges.
 
 ### `[output]`
 

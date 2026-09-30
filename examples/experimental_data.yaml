@@ -1,0 +1,34 @@
+# Synthetic format example only: these are not measured data.
+# For --mode sense, adapt the bins and uncertainties to your PineAPPL grid.
+# Bin count and order must match; ranges are descriptive, not used for matching.
+# Central values and absolute uncertainties use the same arbitrary units.
+bins:
+  - ranges: {y: {low: 0.0, high: 0.5}}
+    value: 100.0
+  - ranges: {y: {low: 0.5, high: 1.0}}
+    value: 80.0
+  - ranges: {y: {low: 1.0, high: 1.5}}
+    value: 50.0
+
+uncertainties:
+  - name: statistical
+    kind: uncorrelated
+    unit: absolute
+    per_bin: [5.0, 4.0, 3.0]
+
+  # Relative uncertainties are fractions: 0.03 means 3%.
+  - name: shape
+    kind: correlated
+    unit: relative
+    per_bin: [0.03, 0.04, 0.05]
+    correlation_matrix:
+      - [1.0, 0.5, 0.2]
+      - [0.5, 1.0, 0.5]
+      - [0.2, 0.5, 1.0]
+
+  # Without a matrix, one correlated source gives a common signed shift.
+  # Reusing its name across data sets also correlates them in a joint analysis.
+  - name: normalization
+    kind: correlated
+    unit: relative
+    per_bin: [0.02, 0.02, 0.02]

@@ -1,0 +1,29 @@
+# Replace the example paths with your own files. See README.md for all options.
+path_to_grids = "path/to/pineappl/grids"
+
+[grids.dy]
+paths = ["dy.pineappl.lz4"]
+label = 'Drell–Yan $d\sigma/dy$'
+# For --mode sense: adapt the synthetic example to match your grid's bins.
+# experimental_data = "examples/experimental_data.yaml"
+
+[output]
+process_grid = ["dy"]
+path_plot = "output/plots/dy.pdf"
+detail = false
+plot_style = "heatmap" # "heatmap" or "boundary"
+
+# Auxiliary grid: Q^2 in GeV^2.
+[config]
+nx_x = 22
+nx_q2 = 15
+x_min = 0.0001
+x_max = 1.0
+q2_min = 1000.0
+q2_max = 1000000.0
+threshold = 0.9
+
+[selection_conf]
+pdf = "CT18NNLO" # Must be installed in LHAPDF.
+max_as = 2 # Relative to the lowest alpha_s power: 0 = LO, 1 = NLO, 2 = NNLO. If available, all EW orders are included
+# All channels and both incoming legs are included by default.
