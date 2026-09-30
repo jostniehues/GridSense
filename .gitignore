@@ -6,5 +6,5 @@ ToDo.txt
 /python/private
 thesis.toml
 /grids.toml
-/input
-/output
+/input/
+/output/
