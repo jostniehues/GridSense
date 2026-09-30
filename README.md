@@ -6,7 +6,7 @@ The current workflow is:
 
 1. read one or more grids from `grids.toml`
 2. extract kinematic contributions in Rust
-3. project and filter them in Rust
+3. project and filter them
 4. build an auxiliary `(x, Q^2)` grid
 5. rank cells by relevance and keep the requested coverage
 6. pass the resulting support masks to Python
@@ -54,7 +54,7 @@ That means:
 
 If your Python executable is not called `python3`, you currently have to change the command in [src/main.rs](/home/jnieh/uni/projects/gridsense/src/main.rs).
 
-Rust writes a temporary JSON file and passes its path plus the final PDF path to the plotting script. That JSON file is created with `tempfile::NamedTempFile` and is not intended as a permanent output.
+Rust writes a temporary JSON file and passes its path plus the final PDF path to the plotting script. That JSON file is created with `tempfile::NamedTempFile` and is currently not intended as a permanent output.
 
 ## Running
 
