@@ -186,7 +186,7 @@ The auxiliary grid is built in log-space and later shown on logarithmic axes.
 This block selects the PDF, perturbative orders, partonic channels, and incoming legs used for all processed grids.
 
 - `pdf`: LHAPDF set used for the convolution
-- `max_as`: optional maximum power of the strong coupling
+- `max_as`: optional order relative to the lowest power of `alpha_s` in each grid. Includes all available contributions up to `min_as + max_as`; when the grid starts at Born level, `0` means LO, `1` NLO, and `2` NNLO. For example, `max_as = 2` includes powers up to `alpha_s^2` for DY and `alpha_s^4` for pure-QCD top-pair production. Omit to include all available orders.
 - `pdgs`: optional initial-state PDG selection
 - `channels`: optional list of zero-based PineAPPL channel indices
 - `leg_pdgs`: optional list of PDGs whose matching incoming legs are projected
@@ -240,7 +240,7 @@ leg_pdgs = [0]
 [q, q] -> discard the entry
 ```
 
-`leg_pdgs` may also be used without `channels`, in which case matching legs are selected across all channels. PDG matching is exact, so a combined quark and antiquark projection must list both signs:
+`leg_pdgs` may also be used without `channels`, in which case matching legs are selected across all channels. Except for the equivalent gluon IDs `0` and `21`, PDG matching is exact, so a combined quark and antiquark projection must list both signs:
 
 ```toml
 leg_pdgs = [1, 2, 3, 4, 5, -1, -2, -3, -4, -5]
@@ -257,7 +257,7 @@ pdgs + channels          rejected
 pdgs + leg_pdgs          rejected
 ```
 
-If none of `pdgs`, `channels`, or `leg_pdgs` is given, all channel entries and both incoming legs are used. By convention, PDG `0` denotes the gluon in the TOML; GridSense maps it to `0` or `21` according to the grid convention. Electroweak orders are retained up to the maximum available for the grid.
+If none of `pdgs`, `channels`, or `leg_pdgs` is given, all channel entries and both incoming legs are used. Both `0` and `21` denote the gluon in `pdgs` and `leg_pdgs`; the examples use `0`. PineAPPL's `convolve_extract_kinematics` normalizes these IDs to the grid convention internally. Electroweak orders are retained up to the maximum available for the grid.
 
 ## Labels and LaTeX-style text
 

@@ -38,6 +38,7 @@ def pdg_title(pdg):
     4: "Charm-Quark",
     5: "Bottom-Quark",
     6: "Top-Quark",
+    21: "Gluon",
 
     -1: "Anti-Down-Quark",
     -2: "Anti-Up-Quark",
@@ -52,7 +53,9 @@ def pdg_title(pdg):
 def as_title(order):
     if order is None:
         return f"All Orders"
-    return rf"Up to $\alpha_s^{order}$"
+
+    labels = {0: "LO", 1: "NLO", 2:"NNLO"}
+    return labels.get(order, rf"$\mathrm{{N}}^{{{order}}}\mathrm{{LO}}$")
     
 
 

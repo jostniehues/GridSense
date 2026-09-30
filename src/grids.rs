@@ -7,16 +7,17 @@ use pineappl::{
     grid::{ Grid, KinematicsContribution, PdgFilter },
 };
 use crate::config::Selection;
-use pineappl::evolution::gluon_has_pid_zero;
+
+//use pineappl::evolution::gluon_has_pid_zero;
 
 //some grids may use 0 or 21 for gluon pdg
-fn translate_pdg(grid: &Grid, pdg: i32) -> i32 {
-    match pdg {
-        0 if gluon_has_pid_zero(grid) => 0,
-        0 => 21,
-        other => other,
-    }
-}
+// fn translate_pdg(grid: &Grid, pdg: i32) -> i32 {
+//     match pdg {
+//         0 if gluon_has_pid_zero(grid) => 0,
+//         0 => 21,
+//         other => other,
+//     }
+// }
 
 pub fn extract_kinematics(
     grid: &Grid,
@@ -45,15 +46,9 @@ pub fn extract_kinematics(
     let channel_mask = build_channel_mask(grid, selection)?;
 
     let pdg_filter = if let Some(pdg) = selection.pdg() {
-        PdgFilter::InitialState(translate_pdg(grid, pdg))
+        PdgFilter::InitialState(pdg)
     } else if let Some(pdgs) = selection.leg_pdgs() {
-        PdgFilter::MatchingLegs(
-            pdgs
-                .iter()
-                .copied()
-                .map(|pdg| translate_pdg(grid, pdg))
-                .collect()
-        )
+        PdgFilter::MatchingLegs(pdgs.to_vec())
     } else {
         PdgFilter::None
     };
@@ -107,12 +102,21 @@ fn build_channel_mask(grid: &Grid, selection: &Selection) -> Result<Vec<bool>> {
     Ok(mask)
 }
 
-/// Build a order mask matching the condition in selection since different bins have different available order.
+/// Build a order mask matching the condition in selection
 fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
+    let min_as = grid
+        .orders()
+        .iter()
+        .map(|order| order.alphas)
+        .min()
+        .unwrap_or(0);
+
+
     grid.orders()
         .iter()
         .map(|order| {
-            let as_ok = selection.max_as().is_none_or(|max_as| order.alphas <= max_as);
+            let as_ok = selection.max_as().is_none_or(|max_as| order.alphas <= min_as + max_as);
+            //exclude scale logs
             let no_scale_logs = order.logxif == 0 && order.logxir == 0 && order.logxia == 0;
 
             as_ok && no_scale_logs
