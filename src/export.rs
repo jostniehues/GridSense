@@ -10,14 +10,35 @@ use tempfile::NamedTempFile;
 
 use crate::transform::{ AuxGrid, BinSupportMaps, SummedContribution, XVar };
 
+/// One computed distribution and the selection used to obtain it.
 #[derive(Serialize)]
 pub struct PlotDataset<'a> {
     pub name: &'a str,
     pub label: &'a str,
     pub group: Option<&'a str>,
+    /// Names of the source grids when this distribution represents a group.
+    pub members: Option<&'a [String]>,
     pub aux_grid: &'a AuxGrid,
-    pub pdg: &'a Option<i32>,
-    pub max_as: &'a Option<u8>,
+    pub pdg: Option<i32>,
+    pub leg_pdgs: Option<&'a [i32]>,
+    pub channels: Option<&'a [usize]>,
+    pub bins: Option<&'a [usize]>,
+}
+
+/// Shared calculation metadata and all distributions in one JSON export.
+#[derive(Serialize)]
+pub struct PlotExport<'a> {
+    pub schema_version: u32,
+    /// Calculation mode: "supp" or "sense".
+    pub mode: &'a str,
+    pub pdf: &'a str,
+    pub pdf_member: u32,
+    /// Requested order relative to the lowest alpha_s power in each source grid.
+    pub max_as: Option<u8>,
+    pub threshold: f64,
+    /// Group weighting in support mode: "grids" or "bins".
+    pub support_group_weighting: &'a str,
+    pub datasets: Vec<PlotDataset<'a>>,
 }
 
 /// Writes (bin, q2, x, xvar, contrib) rows to a CSV file.
