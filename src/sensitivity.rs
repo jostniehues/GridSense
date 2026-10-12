@@ -1,14 +1,14 @@
 //! Experimental inputs and covariance matrices for sensitivity calculations.
 
-use std::collections::{ HashMap, HashSet };
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
 
-use anyhow::{ Context, Result, bail };
-use serde::Deserialize;
+use anyhow::{Context, Result, bail};
 use nalgebra::DMatrix;
+use serde::Deserialize;
 
-use crate::transform::{ AuxGrid, BinSupportMaps };
+use crate::transform::{AuxGrid, BinSupportMaps};
 
 // Debug switch: treat every uncertainty contribution as bin-wise uncorrelated.
 const IGNORE_CORRELATIONS: bool = false;
@@ -68,12 +68,10 @@ type CovarianceMatrix = DMatrix<f64>;
 
 /// Read the YAML format (this is a simplified HepData version).
 pub(crate) fn read_experimental_data(path: &Path) -> Result<ExperimentalData> {
-    let file = File::open(path).with_context(||
-        format!("could not open experimental data '{}'", path.display())
-    )?;
+    let file = File::open(path)
+        .with_context(|| format!("could not open experimental data '{}'", path.display()))?;
 
-    serde_yaml
-        ::from_reader(file)
+    serde_yaml::from_reader(file)
         .with_context(|| format!("could not parse experimental data '{}'", path.display()))
 }
 
@@ -99,14 +97,19 @@ fn relative_shifts(data: &ExperimentalData, source: &UncertaintySource) -> Resul
 
     for (bin_index, uncertainty) in source.per_bin.iter().enumerate() {
         if !uncertainty.is_finite() {
-            bail!("uncertainty source '{}' contains an invalid value", source.name);
+            bail!(
+                "uncertainty source '{}' contains an invalid value",
+                source.name
+            );
         }
 
-        if
-            (source.kind == UncertaintyKind::Uncorrelated || source.correlation_matrix.is_some()) &&
-            *uncertainty < 0.0
+        if (source.kind == UncertaintyKind::Uncorrelated || source.correlation_matrix.is_some())
+            && *uncertainty < 0.0
         {
-            bail!("uncertainty source '{}' contains a negative uncertainty magnitude", source.name);
+            bail!(
+                "uncertainty source '{}' contains a negative uncertainty magnitude",
+                source.name
+            );
         }
 
         let relative_uncertainty = match source.unit {
@@ -133,10 +136,7 @@ fn relative_shifts(data: &ExperimentalData, source: &UncertaintySource) -> Resul
 
 /// Construct one relative covariance matrix for several data sets.
 fn construct_joint_covariance(data_sets: &[&ExperimentalData]) -> Result<CovarianceMatrix> {
-    let total_bins: usize = data_sets
-        .iter()
-        .map(|data| data.bins.len())
-        .sum();
+    let total_bins: usize = data_sets.iter().map(|data| data.bins.len()).sum();
     let mut covariance = DMatrix::zeros(total_bins, total_bins);
     let mut shared_shifts = HashMap::<String, Vec<f64>>::new();
     let mut offset = 0;
@@ -217,11 +217,10 @@ fn construct_joint_covariance(data_sets: &[&ExperimentalData]) -> Result<Covaria
 fn validate_correlation_matrix(
     correlation: &[Vec<f64>],
     number_of_bins: usize,
-    source_name: &str
+    source_name: &str,
 ) -> Result<()> {
-    if
-        correlation.len() != number_of_bins ||
-        correlation.iter().any(|row| row.len() != number_of_bins)
+    if correlation.len() != number_of_bins
+        || correlation.iter().any(|row| row.len() != number_of_bins)
     {
         bail!(
             "correlation matrix for source '{}' must be {}x{}",
@@ -236,16 +235,25 @@ fn validate_correlation_matrix(
             let coefficient = correlation[row][column];
 
             if !coefficient.is_finite() || !(-1.0..=1.0).contains(&coefficient) {
-                bail!("correlation matrix for source '{}' contains an invalid coefficient", source_name);
+                bail!(
+                    "correlation matrix for source '{}' contains an invalid coefficient",
+                    source_name
+                );
             }
 
             if (coefficient - correlation[column][row]).abs() > 1.0e-12 {
-                bail!("correlation matrix for source '{}' is not symmetric", source_name);
+                bail!(
+                    "correlation matrix for source '{}' is not symmetric",
+                    source_name
+                );
             }
         }
 
         if (correlation[row][row] - 1.0).abs() > 1.0e-12 {
-            bail!("correlation matrix for source '{}' must have ones on its diagonal", source_name);
+            bail!(
+                "correlation matrix for source '{}' must have ones on its diagonal",
+                source_name
+            );
         }
     }
 
@@ -291,7 +299,7 @@ fn build_p_matrix(support: &BinSupportMaps, number_of_data_bins: usize) -> Resul
 
 fn build_sensitivity_map(
     support: BinSupportMaps,
-    inverse_covariance: &DMatrix<f64>
+    inverse_covariance: &DMatrix<f64>,
 ) -> Result<AuxGrid> {
     if inverse_covariance.nrows() != inverse_covariance.ncols() {
         bail!("inverse covariance matrix is not square");
@@ -322,7 +330,7 @@ fn build_sensitivity_map(
 
 pub(crate) fn calculate_sensitivity_map(
     support: BinSupportMaps,
-    data: &ExperimentalData
+    data: &ExperimentalData,
 ) -> Result<AuxGrid> {
     let covariance = construct_covariance(data)?;
     let inverse_covariance = invert_covariance(&covariance)?;
@@ -332,16 +340,13 @@ pub(crate) fn calculate_sensitivity_map(
 }
 
 pub(crate) fn calculate_joint_sensitivity_map(
-    data_sets: Vec<(BinSupportMaps, ExperimentalData)>
+    data_sets: Vec<(BinSupportMaps, ExperimentalData)>,
 ) -> Result<AuxGrid> {
     if data_sets.is_empty() {
         bail!("cannot calculate sensitivity without data sets");
     }
 
-    let experimental_data: Vec<_> = data_sets
-        .iter()
-        .map(|(_, data)| data)
-        .collect();
+    let experimental_data: Vec<_> = data_sets.iter().map(|(_, data)| data).collect();
     let covariance = construct_joint_covariance(&experimental_data)?;
     let inverse_covariance = invert_covariance(&covariance)?;
     let mut supports = data_sets.into_iter().map(|(support, _)| support);
@@ -388,7 +393,11 @@ mod tests {
         assert_eq!(data.bins.len(), 78);
         assert_eq!(data.grid_bin_counts(), Some([22, 21, 19, 16].as_slice()));
         assert_eq!(data.uncertainties.len(), 29);
-        assert!(data.uncertainties.iter().all(|source| source.name != "Lumi"));
+        assert!(
+            data.uncertainties
+                .iter()
+                .all(|source| source.name != "Lumi")
+        );
         assert_eq!(covariance.shape(), (78, 78));
         assert_ne!(covariance[(0, 1)], 0.0);
     }
@@ -427,13 +436,16 @@ mod tests {
     fn constructs_atlas_wplus_correlated_covariance_without_luminosity() {
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("input/wz/Wplus_atlas.yaml");
         let data = read_experimental_data(&path).expect("Wplus data should be readable");
-        let covariance = construct_covariance(&data).expect(
-            "Wplus covariance should be constructible"
-        );
+        let covariance =
+            construct_covariance(&data).expect("Wplus covariance should be constructible");
 
         assert_eq!(data.bins.len(), 11);
         assert_eq!(data.uncertainties.len(), 132);
-        assert!(data.uncertainties.iter().all(|source| source.name != "AtlasLumi2011"));
+        assert!(
+            data.uncertainties
+                .iter()
+                .all(|source| source.name != "AtlasLumi2011")
+        );
         assert_eq!(covariance.nrows(), 11);
         assert_eq!(covariance.ncols(), 11);
         assert!((covariance[(0, 0)] - 3.015665465e-5).abs() < 1.0e-15);
@@ -451,7 +463,10 @@ mod tests {
         let zpeak = read_experimental_data(&root.join("input/wz/Zpeak_atlas.yaml")).unwrap();
         let covariance = construct_joint_covariance(&[&wplus, &wminus, &zpeak]).unwrap();
 
-        assert_eq!((wplus.bins.len(), wminus.bins.len(), zpeak.bins.len()), (11, 11, 12));
+        assert_eq!(
+            (wplus.bins.len(), wminus.bins.len(), zpeak.bins.len()),
+            (11, 11, 12)
+        );
         assert_eq!(covariance.shape(), (34, 34));
         assert!((covariance[(0, 11)] - 2.34583e-5).abs() < 1.0e-15);
         assert!((covariance[(0, 22)] - 6.1756e-6).abs() < 1.0e-15);
@@ -466,17 +481,36 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
 
         for (filename, number_of_bins, central, stat, sys, correlation) in [
-            ("Wplus_lhcb.yaml", 8, [192.2, 178.8], [1.2, 0.9], [3.5, 3.1], -0.15),
-            ("Wminus_lhcb.yaml", 8, [111.1, 104.9], [0.9, 0.7], [2.1, 1.9], -0.24),
-            ("Z_lhcb.yaml", 17, [0.969, 2.84], [0.039, 0.063], [0.032, 0.05], 0.18),
+            (
+                "Wplus_lhcb.yaml",
+                8,
+                [192.2, 178.8],
+                [1.2, 0.9],
+                [3.5, 3.1],
+                -0.15,
+            ),
+            (
+                "Wminus_lhcb.yaml",
+                8,
+                [111.1, 104.9],
+                [0.9, 0.7],
+                [2.1, 1.9],
+                -0.24,
+            ),
+            (
+                "Z_lhcb.yaml",
+                17,
+                [0.969, 2.84],
+                [0.039, 0.063],
+                [0.032, 0.05],
+                0.18,
+            ),
         ] {
             let path = root.join("input/wz").join(filename);
-            let data = read_experimental_data(&path).unwrap_or_else(|error|
-                panic!("{filename} should be readable: {error}")
-            );
-            let covariance = construct_covariance(&data).unwrap_or_else(|error|
-                panic!("{filename} covariance failed: {error}")
-            );
+            let data = read_experimental_data(&path)
+                .unwrap_or_else(|error| panic!("{filename} should be readable: {error}"));
+            let covariance = construct_covariance(&data)
+                .unwrap_or_else(|error| panic!("{filename} covariance failed: {error}"));
 
             assert_eq!(data.bins.len(), number_of_bins);
             assert_eq!(data.uncertainties.len(), 2);
@@ -494,16 +528,14 @@ mod tests {
             assert!((covariance[(0, 1)] - expected_off_diagonal).abs() < 1.0e-15);
             assert!((covariance[(0, 1)] - covariance[(1, 0)]).abs() < 1.0e-15);
 
-            invert_covariance(&covariance).unwrap_or_else(|error|
-                panic!("{filename} covariance is singular: {error}")
-            );
+            invert_covariance(&covariance)
+                .unwrap_or_else(|error| panic!("{filename} covariance is singular: {error}"));
         }
     }
 
     #[test]
     fn format_ignores_range_metadata() {
-        let yaml =
-            r#"
+        let yaml = r#"
 observable:
   name: "d2sigma/dxdy"
   unit: "pb"
@@ -561,8 +593,14 @@ uncertainties:
 
         assert_eq!(p_matrix.nrows(), 2);
         assert_eq!(p_matrix.ncols(), 2);
-        assert_eq!(p_matrix.column(0).into_owned(), DMatrix::from_column_slice(2, 1, &[0.25, 0.6]));
-        assert_eq!(p_matrix.column(1).into_owned(), DMatrix::from_column_slice(2, 1, &[0.75, 0.4]));
+        assert_eq!(
+            p_matrix.column(0).into_owned(),
+            DMatrix::from_column_slice(2, 1, &[0.25, 0.6])
+        );
+        assert_eq!(
+            p_matrix.column(1).into_owned(),
+            DMatrix::from_column_slice(2, 1, &[0.75, 0.4])
+        );
     }
 
     #[test]

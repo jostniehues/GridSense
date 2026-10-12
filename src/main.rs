@@ -1,42 +1,36 @@
-use std::{ collections::BTreeMap, fs::File };
 use std::path::PathBuf;
+use std::{collections::BTreeMap, fs::File};
 
-use anyhow::{ Context, Result };
-use clap::{ Parser, ValueEnum };
+use anyhow::{Context, Result};
+use clap::{Parser, ValueEnum};
 use pineappl::grid::Grid;
 
 mod config;
-mod grids;
-mod transform;
 mod export;
+mod grids;
 mod sensitivity;
-use config::{ read_config, resolve_grid_paths, SupportGroupWeighting };
-use std::io::{ self, Write };
+mod transform;
+use config::{SupportGroupWeighting, read_config, resolve_grid_paths};
 use grids::extract_kinematics;
+use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
 
 use export::{
-    write_auxgrids_tmp_json,
-    write_bin_support_maps_csv,
-    write_q2xcontrib_csv,
-    PlotDataset,
-};
-use transform::{
-    average_support_maps,
-    build_per_bin_support_maps,
-    ranked_cells,
-    sum_over_x,
-    BinSupportMaps,
+    PlotDataset, write_auxgrids_tmp_json, write_bin_support_maps_csv, write_q2xcontrib_csv,
 };
 use sensitivity::{
-    calculate_joint_sensitivity_map,
-    calculate_sensitivity_map,
+    ExperimentalData, calculate_joint_sensitivity_map, calculate_sensitivity_map,
     read_experimental_data,
-    ExperimentalData,
+};
+use transform::{
+    BinSupportMaps, average_support_maps, build_per_bin_support_maps, ranked_cells, sum_over_x,
 };
 
-use crate::{ config::{ GridConfig, Selection }, transform::AuxGrid };
+use crate::{
+    config::{GridConfig, Selection},
+    transform::AuxGrid,
+};
 
 struct PlotGrid {
     name: String,
@@ -75,7 +69,7 @@ fn load_bin_support_grid(
     grid_name: &str,
     config: &GridConfig,
     selection: &Selection,
-    write_contributions: bool
+    write_contributions: bool,
 ) -> Result<BinSupportMaps> {
     load_bin_support_grid_with_counts(grid_name, config, selection, write_contributions, None)
 }
@@ -85,7 +79,7 @@ fn load_bin_support_grid_with_counts(
     config: &GridConfig,
     selection: &Selection,
     write_contributions: bool,
-    grid_bin_counts: Option<&[usize]>
+    grid_bin_counts: Option<&[usize]>,
 ) -> Result<BinSupportMaps> {
     let grid_paths = resolve_grid_paths(config, grid_name)?;
 
@@ -102,16 +96,18 @@ fn load_bin_support_grid_with_counts(
     let mut combined_kinematics = Vec::new();
 
     for (grid_index, grid_path) in grid_paths.into_iter().enumerate() {
-        let grid_file = File::open(&grid_path).with_context(||
-            format!("could not open grid '{}'", grid_path.display())
-        )?;
-        let grid = Grid::read(grid_file).with_context(||
-            format!("could not read grid '{}'", grid_path.display())
-        )?;
+        let grid_file = File::open(&grid_path)
+            .with_context(|| format!("could not open grid '{}'", grid_path.display()))?;
+        let grid = Grid::read(grid_file)
+            .with_context(|| format!("could not read grid '{}'", grid_path.display()))?;
 
-        let mut kinematics = extract_kinematics(&grid, selection, config.pdf()).with_context(|| {
-            format!("could not extract kinematics from grid '{}'", grid_path.display())
-        })?;
+        let mut kinematics =
+            extract_kinematics(&grid, selection, config.pdf()).with_context(|| {
+                format!(
+                    "could not extract kinematics from grid '{}'",
+                    grid_path.display()
+                )
+            })?;
 
         if let Some(number_of_bins) = grid_bin_counts.map(|counts| counts[grid_index]) {
             if number_of_bins > kinematics.len() {
@@ -170,25 +166,23 @@ fn load_bin_support_grid_with_counts(
 
 fn combine_grouped_support(
     support_maps: Vec<BinSupportMaps>,
-    weighting: SupportGroupWeighting
+    weighting: SupportGroupWeighting,
 ) -> Result<AuxGrid> {
     let Some(reference) = support_maps.first() else {
         anyhow::bail!("cannot combine an empty support group");
     };
 
-    if
-        support_maps
-            .iter()
-            .any(|support| {
-                support.lx_edges != reference.lx_edges || support.lq_edges != reference.lq_edges
-            })
-    {
+    if support_maps.iter().any(|support| {
+        support.lx_edges != reference.lx_edges || support.lq_edges != reference.lq_edges
+    }) {
         anyhow::bail!("cannot combine support maps with different auxiliary grids");
     }
 
     let number_of_grids = support_maps.len();
     let mut support_maps = support_maps.into_iter();
-    let first = support_maps.next().expect("support group was checked as non-empty");
+    let first = support_maps
+        .next()
+        .expect("support group was checked as non-empty");
 
     match weighting {
         SupportGroupWeighting::Grids => {
@@ -219,7 +213,10 @@ fn combine_grouped_support(
 /// Let user confirm that (s)he wants to override the path if it already exsits
 fn confirm_overwrite(path: &Path) -> Result<bool> {
     if path.exists() {
-        print!("File '{}' already exists. Overwrite? [y/n]: ", path.display());
+        print!(
+            "File '{}' already exists. Overwrite? [y/n]: ",
+            path.display()
+        );
         io::stdout().flush()?;
 
         let mut input = String::new();
@@ -238,7 +235,7 @@ fn load_sensitivity_grid(
     grid_name: &str,
     experimental_path: &Path,
     config: &GridConfig,
-    selection: &Selection
+    selection: &Selection,
 ) -> Result<(BinSupportMaps, ExperimentalData)> {
     let experimental_data = read_experimental_data(experimental_path)?;
     let support = load_bin_support_grid_with_counts(
@@ -246,7 +243,7 @@ fn load_sensitivity_grid(
         config,
         selection,
         false,
-        experimental_data.grid_bin_counts()
+        experimental_data.grid_bin_counts(),
     )?;
 
     Ok((support, experimental_data))
@@ -333,7 +330,10 @@ fn run_support(config: &GridConfig) -> Result<()> {
             let label = config.grid_label(grid_name)?;
 
             if let Some(group_name) = config.group_for_grid(grid_name) {
-                grouped_support.entry(group_name.to_string()).or_default().push(bin_support);
+                grouped_support
+                    .entry(group_name.to_string())
+                    .or_default()
+                    .push(bin_support);
             } else {
                 let aux_grid = average_support_maps(bin_support);
                 aux_grids.push(PlotGrid {
@@ -367,10 +367,12 @@ fn run_support(config: &GridConfig) -> Result<()> {
 //Todo: avoid code duplication
 fn run_sensitivity(config: &GridConfig) -> Result<()> {
     //bin selection not implemented for sensititivy mode
-    if config.selection().iter().any(|selection| selection.bins().is_some()) {
-        anyhow::bail!(
-            "bin selection is currently supported only in supp mode"
-        );
+    if config
+        .selection()
+        .iter()
+        .any(|selection| selection.bins().is_some())
+    {
+        anyhow::bail!("bin selection is currently supported only in supp mode");
     }
 
     let plot_path = config.plot_path();
@@ -390,15 +392,14 @@ fn run_sensitivity(config: &GridConfig) -> Result<()> {
 
         for grid_name in config.grids() {
             let experimental_path = config.experimental_data_path(grid_name)?;
-            let data_set = load_sensitivity_grid(
-                grid_name,
-                &experimental_path,
-                config,
-                &selection
-            )?;
+            let data_set =
+                load_sensitivity_grid(grid_name, &experimental_path, config, &selection)?;
 
             if let Some(group_name) = config.group_for_grid(grid_name) {
-                grouped_data.entry(group_name.to_string()).or_default().push(data_set);
+                grouped_data
+                    .entry(group_name.to_string())
+                    .or_default()
+                    .push(data_set);
             } else {
                 let (support, experimental_data) = data_set;
                 let sensitivity = calculate_sensitivity_map(support, &experimental_data)?;

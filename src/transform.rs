@@ -1,9 +1,9 @@
 //! Helpers to transform extracted PineAPPL contributions into plot-ready data.
 
-use std::collections::BTreeMap;
-use serde::Serialize;
-use thiserror::Error;
 use pineappl::grid::KinematicsContribution;
+use serde::Serialize;
+use std::collections::BTreeMap;
+use thiserror::Error;
 
 const LEG_1: u8 = 0b01;
 const LEG_2: u8 = 0b10;
@@ -19,14 +19,16 @@ pub struct SummedContribution {
 
 #[derive(Debug, Error)]
 pub enum TransformError {
-    #[error("no contributions were available for x projection {0:?}")] EmptyProjection(XVar),
+    #[error("no contributions were available for x projection {0:?}")]
+    EmptyProjection(XVar),
     #[error("no contributions were available to build relevance")]
     EmptyRelevanceInput,
     #[error("invalid auxiliary grid specification")]
     InvalidAuxgridSpec,
     #[error("no relevance points fell into the auxiliary grid")]
     EmptyAuxGrid,
-    #[error("coverage threshold must lie in [0, 1], got {0}")] InvalidCoverageThreshold(f64),
+    #[error("coverage threshold must lie in [0, 1], got {0}")]
+    InvalidCoverageThreshold(f64),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -41,7 +43,7 @@ pub enum XVar {
 /// `XVar::X2` keeps `x2` and sums over `x1`.
 pub fn sum_over_x(
     contrib: &[Vec<KinematicsContribution>],
-    xvar: XVar
+    xvar: XVar,
 ) -> Result<Vec<Vec<SummedContribution>>, TransformError> {
     let summed_bins: Vec<Vec<SummedContribution>> = contrib
         .into_iter()
@@ -80,7 +82,7 @@ pub fn sum_over_x(
 /// Specification of the plottet grid
 pub struct GridSpec {
     pub nx_q2: usize, //number of nodes
-    pub nx_x: usize, // number of bins for both x1 and x2
+    pub nx_x: usize,  // number of bins for both x1 and x2
     pub x_min: f64,
     pub x_max: f64,
     pub q2_min: f64,
@@ -143,7 +145,7 @@ fn logarithmic_edges(min: f64, max: f64, number_of_bins: usize) -> Vec<f64> {
     let log_max = max.log10();
 
     (0..=number_of_bins)
-        .map(|i| { log_min + ((log_max - log_min) * (i as f64)) / (number_of_bins as f64) })
+        .map(|i| log_min + ((log_max - log_min) * (i as f64)) / (number_of_bins as f64))
         .collect()
 }
 
@@ -151,7 +153,7 @@ fn logarithmic_edges(min: f64, max: f64, number_of_bins: usize) -> Vec<f64> {
 fn accumulate_bin_in_3d(
     bin: &[KinematicsContribution],
     lx_edges: &[f64],
-    lq_edges: &[f64]
+    lq_edges: &[f64],
 ) -> AuxGrid3D {
     let nx = lx_edges.len() - 1;
     let nq = lq_edges.len() - 1;
@@ -218,15 +220,14 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
 /// Calculate all single P_B,z.
 pub(crate) fn build_per_bin_support_maps(
     contrib: &[Vec<KinematicsContribution>],
-    grid_spec: &GridSpec
+    grid_spec: &GridSpec,
 ) -> Result<BinSupportMaps, TransformError> {
-    if
-        grid_spec.nx_x == 0 ||
-        grid_spec.nx_q2 == 0 ||
-        grid_spec.x_min <= 0.0 ||
-        grid_spec.q2_min <= 0.0 ||
-        grid_spec.x_min >= grid_spec.x_max ||
-        grid_spec.q2_min >= grid_spec.q2_max
+    if grid_spec.nx_x == 0
+        || grid_spec.nx_q2 == 0
+        || grid_spec.x_min <= 0.0
+        || grid_spec.q2_min <= 0.0
+        || grid_spec.x_min >= grid_spec.x_max
+        || grid_spec.q2_min >= grid_spec.q2_max
     {
         return Err(TransformError::InvalidAuxgridSpec);
     }
@@ -260,10 +261,7 @@ pub(crate) fn build_per_bin_support_maps(
 pub fn average_support_maps(bin_support: BinSupportMaps) -> AuxGrid {
     let nx = bin_support.lx_edges.len() - 1;
     let nq = bin_support.lq_edges.len() - 1;
-    let mut combined = vec![
-            vec![0.0; nx];
-            nq
-        ];
+    let mut combined = vec![vec![0.0; nx]; nq];
 
     for projected in &bin_support.weights {
         for iq in 0..nq {
@@ -318,7 +316,8 @@ pub fn ranked_cells(mut aux_grid: AuxGrid, threshold: f64) -> Result<AuxGrid, Tr
 
     let target_weight = threshold * total_weight;
 
-    let mut ranked_cells: Vec<(usize, usize, f64)> = aux_grid.weights
+    let mut ranked_cells: Vec<(usize, usize, f64)> = aux_grid
+        .weights
         .iter()
         .enumerate()
         .flat_map(|(iy, row)| {

@@ -1,12 +1,12 @@
 //! Module to extract relevant data from pineappl grids
 //!
-use anyhow::{ Context, Ok, Result };
+use crate::config::Selection;
+use anyhow::{Context, Ok, Result};
 use lhapdf::Pdf;
 use pineappl::{
-    convolutions::{ Conv, ConvType, ConvolutionCache },
-    grid::{ Grid, KinematicsContribution, PdgFilter },
+    convolutions::{Conv, ConvType, ConvolutionCache},
+    grid::{Grid, KinematicsContribution, PdgFilter},
 };
-use crate::config::Selection;
 
 //use pineappl::evolution::gluon_has_pid_zero;
 
@@ -22,16 +22,14 @@ use crate::config::Selection;
 pub fn extract_kinematics(
     grid: &Grid,
     selection: &Selection,
-    pdf_name: &str
+    pdf_name: &str,
 ) -> Result<Vec<Vec<KinematicsContribution>>> {
     lhapdf::set_verbosity(0);
-    let pdf = Pdf::with_setname_and_member(pdf_name, 0).with_context(|| {
-        format!("could not load LHAPDF set '{pdf_name}' member 0")
-    })?;
+    let pdf = Pdf::with_setname_and_member(pdf_name, 0)
+        .with_context(|| format!("could not load LHAPDF set '{pdf_name}' member 0"))?;
 
-    let pdf_alphas = Pdf::with_setname_and_member(pdf_name, 0).with_context(|| {
-        format!("could not load LHAPDF set '{pdf_name}' member 0 for alpha_s")
-    })?;
+    let pdf_alphas = Pdf::with_setname_and_member(pdf_name, 0)
+        .with_context(|| format!("could not load LHAPDF set '{pdf_name}' member 0 for alpha_s"))?;
 
     let mut xfx = |id, x, q2| pdf.xfx_q2(id, x, q2);
     let mut alphas = |q2: f64| pdf_alphas.alphas_q2(q2);
@@ -39,7 +37,7 @@ pub fn extract_kinematics(
     let mut convolution_cache = ConvolutionCache::new(
         vec![Conv::new(ConvType::UnpolPDF, 2212)],
         vec![&mut xfx],
-        &mut alphas
+        &mut alphas,
     );
 
     let order_mask = build_order_mask(grid, selection);
@@ -58,7 +56,7 @@ pub fn extract_kinematics(
         &order_mask,
         &[],
         &channel_mask,
-        &[(1.0, 1.0, 1.0)]
+        &[(1.0, 1.0, 1.0)],
     );
 
     let contributions = grid.convolve_extract_kinematics(
@@ -67,7 +65,7 @@ pub fn extract_kinematics(
         &[],
         &channel_mask,
         &[(1.0, 1.0, 1.0)],
-        &pdg_filter
+        &pdg_filter,
     );
 
     //closure test
@@ -111,11 +109,12 @@ fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
         .min()
         .unwrap_or(0);
 
-
     grid.orders()
         .iter()
         .map(|order| {
-            let as_ok = selection.max_as().is_none_or(|max_as| order.alphas <= min_as + max_as);
+            let as_ok = selection
+                .max_as()
+                .is_none_or(|max_as| order.alphas <= min_as + max_as);
             //exclude scale logs
             let no_scale_logs = order.logxif == 0 && order.logxir == 0 && order.logxia == 0;
 
@@ -127,7 +126,7 @@ fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
 /// Function to check that the convolution over every single grid point reproduces the pineappl convolution
 fn check_convolution_closure(
     regular: &[f64],
-    node_contrib: &[Vec<KinematicsContribution>]
+    node_contrib: &[Vec<KinematicsContribution>],
 ) -> Result<()> {
     if regular.len() != node_contrib.len() {
         anyhow::bail!(
@@ -138,10 +137,7 @@ fn check_convolution_closure(
     const ABS_TOLERANCE: f64 = 1.0e-12;
 
     for (bin_index, (expected, bin)) in regular.iter().zip(node_contrib).enumerate() {
-        let reconstructed: f64 = bin
-            .iter()
-            .map(|point| point.value)
-            .sum(); //sum over all interpolation grid points
+        let reconstructed: f64 = bin.iter().map(|point| point.value).sum(); //sum over all interpolation grid points
 
         let difference = (reconstructed - expected).abs();
         let tolerance = ABS_TOLERANCE + REL_TOLERANCE * expected.abs();

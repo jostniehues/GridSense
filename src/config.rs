@@ -1,11 +1,11 @@
 //! Module to read the grids.toml file
 
-use std::collections::{ BTreeSet, HashMap };
+use std::collections::{BTreeSet, HashMap};
 use std::fs;
-use std::path::{ Path, PathBuf };
+use std::path::{Path, PathBuf};
 
-use anyhow::{ Context, Result, anyhow };
-use serde::{ Deserialize, Deserializer, de };
+use anyhow::{Context, Result, anyhow};
+use serde::{Deserialize, Deserializer, de};
 
 use crate::transform::GridSpec;
 
@@ -85,7 +85,7 @@ struct SelectionConfig {
     channels: Option<Vec<usize>>,
     pdf: String,
     #[serde(default, deserialize_with = "deserialize_indices")]
-    bins: Option<Vec<usize>>
+    bins: Option<Vec<usize>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -96,16 +96,17 @@ enum IndexItem {
 }
 
 fn deserialize_indices<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D::Error>
-    where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
     let Some(items) = Option::<Vec<IndexItem>>::deserialize(deserializer)? else {
         return Ok(None);
     };
 
     if items.is_empty() {
-        return Err(
-            de::Error::custom("indey selection must not be empty; omit the field to select all channels")
-        );
+        return Err(de::Error::custom(
+            "indey selection must not be empty; omit the field to select all channels",
+        ));
     }
 
     let mut channels = BTreeSet::new();
@@ -122,31 +123,22 @@ fn deserialize_indices<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D:
                     let start = start
                         .trim()
                         .parse::<usize>()
-                        .map_err(|_| {
-                            de::Error::custom(format!("invalid index range '{value}'"))
-                        })?;
-                    let end = end
-                        .trim()
-                        .parse::<usize>()
-                        .map_err(|_| {
-                            de::Error::custom(format!("invalid channel range '{value}'"))
-                        })?;
+                        .map_err(|_| de::Error::custom(format!("invalid index range '{value}'")))?;
+                    let end = end.trim().parse::<usize>().map_err(|_| {
+                        de::Error::custom(format!("invalid channel range '{value}'"))
+                    })?;
 
                     if start > end {
-                        return Err(
-                            de::Error::custom(
-                                format!("index range '{value}' has decreasing bounds")
-                            )
-                        );
+                        return Err(de::Error::custom(format!(
+                            "index range '{value}' has decreasing bounds"
+                        )));
                     }
 
                     channels.extend(start..=end);
                 } else {
                     let index = value
                         .parse::<usize>()
-                        .map_err(|_| {
-                            de::Error::custom(format!("invalid index index '{value}'"))
-                        })?;
+                        .map_err(|_| de::Error::custom(format!("invalid index index '{value}'")))?;
                     channels.insert(index);
                 }
             }
@@ -241,60 +233,58 @@ impl GridConfig {
 
     //check if grids from [output.groups] are also in process_grid
     fn validate_groups(&self) -> Result<()> {
-        let all_grouped_grids_are_processed = self.output.groups
+        let all_grouped_grids_are_processed = self
+            .output
+            .groups
             .values()
             .flatten()
             .all(|grid_name| self.output.process_grid.contains(grid_name));
 
         if !all_grouped_grids_are_processed {
-            return Err(
-                anyhow!("at least one grid in output.groups is not listed in output.process_grid")
-            );
+            return Err(anyhow!(
+                "at least one grid in output.groups is not listed in output.process_grid"
+            ));
         }
 
         Ok(())
     }
 
     pub fn experimental_data_path(&self, grid_name: &str) -> Result<PathBuf> {
-        let entry = self.grids
-            .get(grid_name)
-            .ok_or_else(|| {
-                anyhow!("grid '{grid_name}' is not defined in the configuration file")
-            })?;
+        let entry = self.grids.get(grid_name).ok_or_else(|| {
+            anyhow!("grid '{grid_name}' is not defined in the configuration file")
+        })?;
 
-        let path = entry.experimental_data
+        let path = entry
+            .experimental_data
             .as_ref()
-            .ok_or_else(|| { anyhow!("grid '{grid_name}' has no experimental_data entry") })?;
+            .ok_or_else(|| anyhow!("grid '{grid_name}' has no experimental_data entry"))?;
 
         Ok(path.clone())
     }
-
 }
 
 impl SelectionConfig {
     pub fn selection(&self) -> Vec<Selection> {
         match &self.pdgs {
-            Some(pdgs) if !pdgs.is_empty() =>
-                pdgs
-                    .iter()
-                    .copied()
-                    .map(|pdg| Selection {
-                        pdg: Some(pdg),
-                        leg_pdgs: None,
-                        max_as: self.max_as,
-                        channels: None,
-                        bins: self.bins.clone()
-                    })
-                    .collect(),
-
-            _ =>
-                vec![Selection {
-                    pdg: None,
-                    leg_pdgs: self.leg_pdgs.clone(),
+            Some(pdgs) if !pdgs.is_empty() => pdgs
+                .iter()
+                .copied()
+                .map(|pdg| Selection {
+                    pdg: Some(pdg),
+                    leg_pdgs: None,
                     max_as: self.max_as,
-                    channels: self.channels.clone(),
-                    bins: self.bins.clone()
-                }],
+                    channels: None,
+                    bins: self.bins.clone(),
+                })
+                .collect(),
+
+            _ => vec![Selection {
+                pdg: None,
+                leg_pdgs: self.leg_pdgs.clone(),
+                max_as: self.max_as,
+                channels: self.channels.clone(),
+                bins: self.bins.clone(),
+            }],
         }
     }
 
@@ -365,12 +355,10 @@ impl Selection {
 
 /// Reads and parses the TOML configuration.
 pub fn read_config(config_path: &Path) -> Result<GridConfig> {
-    let raw_config = fs
-        ::read_to_string(config_path)
+    let raw_config = fs::read_to_string(config_path)
         .with_context(|| format!("could not read config file '{}'", config_path.display()))?;
 
-    let config: GridConfig = toml
-        ::from_str(&raw_config)
+    let config: GridConfig = toml::from_str(&raw_config)
         .with_context(|| format!("could not parse config file '{}'", config_path.display()))?;
 
     // add central method later when there are more validation steps
@@ -382,7 +370,6 @@ pub fn read_config(config_path: &Path) -> Result<GridConfig> {
 
 /// Resolves the full filesystem path for a configured grid name. Get the file_name for a certain grid
 pub fn resolve_grid_paths(config: &GridConfig, grid_name: &str) -> Result<Vec<PathBuf>> {
-
     let Some(grid) = config.grids.get(grid_name) else {
         anyhow::bail!("grid '{grid_name}' is not defined");
     };
@@ -404,31 +391,34 @@ mod tests {
 
     #[test]
     fn parses_channel_indices_and_ranges() {
-        let config: SelectionConfig = toml
-            ::from_str(r#"
+        let config: SelectionConfig = toml::from_str(
+            r#"
 pdf = "CT18NNLO"
 channels = ["1-5", 8, 11]
-"#)
-            .unwrap();
+"#,
+        )
+        .unwrap();
 
         assert_eq!(config.channels, Some(vec![1, 2, 3, 4, 5, 8, 11]));
     }
 
     #[test]
     fn rejects_decreasing_channel_ranges() {
-        let error = toml
-            ::from_str::<SelectionConfig>(r#"
+        let error = toml::from_str::<SelectionConfig>(
+            r#"
 pdf = "CT18NNLO"
 channels = ["5-1"]
-"#)
-            .unwrap_err();
+"#,
+        )
+        .unwrap_err();
 
         assert!(error.to_string().contains("decreasing bounds"));
     }
 
     #[test]
     fn parses_global_support_group_weighting() {
-        let output: OutputConfig = toml::from_str(r#"
+        let output: OutputConfig = toml::from_str(
+            r#"
 path_plot = "plot.pdf"
 process_grid = ["wp_atlas", "wm_atlas"]
 detail = false
@@ -436,7 +426,9 @@ support_group_weighting = "bins"
 
 [groups]
 "ATLAS DY" = ["wp_atlas", "wm_atlas"]
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         assert_eq!(output.support_group_weighting, SupportGroupWeighting::Bins);
         assert_eq!(output.groups["ATLAS DY"].len(), 2);
