@@ -8,37 +8,30 @@ use pineappl::{
 };
 use crate::config::Selection;
 
-//use pineappl::evolution::gluon_has_pid_zero;
-
-//some grids may use 0 or 21 for gluon pdg
-// fn translate_pdg(grid: &Grid, pdg: i32) -> i32 {
-//     match pdg {
-//         0 if gluon_has_pid_zero(grid) => 0,
-//         0 => 21,
-//         other => other,
-//     }
-// }
-
 pub fn extract_kinematics(
     grid: &Grid,
     selection: &Selection,
-    pdf_name: &str
+    pdf_name: &str,
+    second_pdf_name: &str
 ) -> Result<Vec<Vec<KinematicsContribution>>> {
     lhapdf::set_verbosity(0);
     let pdf = Pdf::with_setname_and_member(pdf_name, 0).with_context(|| {
         format!("could not load LHAPDF set '{pdf_name}' member 0")
     })?;
 
-    let pdf_alphas = Pdf::with_setname_and_member(pdf_name, 0).with_context(|| {
-        format!("could not load LHAPDF set '{pdf_name}' member 0 for alpha_s")
+    let pdf2 = Pdf::with_setname_and_member(second_pdf_name, 0).with_context(|| {
+        format!("could not load LHAPDF set '{second_pdf_name}' member 0")
     })?;
 
-    let mut xfx = |id, x, q2| pdf.xfx_q2(id, x, q2);
-    let mut alphas = |q2: f64| pdf_alphas.alphas_q2(q2);
+    let mut xfx1 = |id, x, q2| pdf.xfx_q2(id, x, q2);
+    let mut xfx2 = |id, x, q2| pdf2.xfx_q2(id, x, q2);
+    // we take the alpha_s from the proton pdf
+    let mut alphas = |q2: f64| pdf.alphas_q2(q2);
 
+    // todo: What happens if the grid has not the correct PID for the second hadron (default seems to be always 2212)?
     let mut convolution_cache = ConvolutionCache::new(
-        vec![Conv::new(ConvType::UnpolPDF, 2212)],
-        vec![&mut xfx],
+        vec![Conv::new(ConvType::UnpolPDF, 2212), Conv::new(ConvType::UnpolPDF, 2212)],
+        vec![&mut xfx1, &mut xfx2],
         &mut alphas
     );
 
@@ -60,6 +53,10 @@ pub fn extract_kinematics(
         &channel_mask,
         &[(1.0, 1.0, 1.0)]
     );
+
+    for (bin, value) in regular_conv.iter().enumerate() {
+        println!("Bin {bin}: {value:.8e}");
+    }
 
     let contributions = grid.convolve_extract_kinematics(
         &mut convolution_cache,
@@ -110,7 +107,6 @@ fn build_order_mask(grid: &Grid, selection: &Selection) -> Vec<bool> {
         .map(|order| order.alphas)
         .min()
         .unwrap_or(0);
-
 
     grid.orders()
         .iter()

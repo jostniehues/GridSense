@@ -22,6 +22,10 @@ pub enum TransformError {
     #[error("no contributions were available for x projection {0:?}")] EmptyProjection(XVar),
     #[error("no contributions were available to build relevance")]
     EmptyRelevanceInput,
+    #[error("zero support in selected bin {0} (A_B = 0)")]
+    EmptyBinSupport(usize),
+    #[error("support_leg must be 1 or 2, got {0}")]
+    InvalidSupportLeg(u8),
     #[error("invalid auxiliary grid specification")]
     InvalidAuxgridSpec,
     #[error("no relevance points fell into the auxiliary grid")]
@@ -127,13 +131,16 @@ impl AuxGrid3D {
         self.weights[iq][ix1][ix2][usize::from(leg_mask)] += value;
     }
 
-    fn absolute_sum(&self) -> f64 {
+    fn absolute_sum(&self, requested_mask: u8) -> f64 {
         self.weights
             .iter()
             .flatten()
             .flatten()
-            .flatten()
-            .map(|value| value.abs())
+            .flat_map(|cell| {
+                [LEG_1, LEG_2, BOTH_LEGS].into_iter()
+                    .filter(move |mask| mask & requested_mask != 0)
+                    .map(|mask| cell[usize::from(mask)].abs())
+            })
             .sum()
     }
 }
@@ -178,9 +185,10 @@ fn accumulate_bin_in_3d(
 }
 
 /// Implementation of P_B
-fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
-    // A_B = sum_u |C_{B,u}|
-    let a_b = cells.absolute_sum();
+fn project_bin_to_2d(cells: &AuxGrid3D, requested_mask: u8) -> Option<Vec<Vec<f64>>> {
+    // Normalize only mask groups that contribute to the selected projection.
+    // Keep the original groups separate when taking absolute values.
+    let a_b = cells.absolute_sum(requested_mask);
 
     if a_b == 0.0 {
         return None;
@@ -195,16 +203,21 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
         for ix1 in 0..nx {
             for ix2 in 0..nx {
                 for leg_mask in [LEG_1, LEG_2, BOTH_LEGS] {
+                    let effective_mask = leg_mask & requested_mask;
+                    if effective_mask == 0 {
+                        continue;
+                    }
+
                     let value = cells.weights[iq][ix1][ix2][usize::from(leg_mask)].abs();
 
-                    let number_of_legs = leg_mask.count_ones() as f64;
+                    let number_of_legs = effective_mask.count_ones() as f64;
                     let normalized = value / (a_b * number_of_legs);
 
-                    if (leg_mask & LEG_1) != 0 {
+                    if (effective_mask & LEG_1) != 0 {
                         projected[iq][ix1] += normalized;
                     }
 
-                    if (leg_mask & LEG_2) != 0 {
+                    if (effective_mask & LEG_2) != 0 {
                         projected[iq][ix2] += normalized;
                     }
                 }
@@ -218,8 +231,16 @@ fn project_bin_to_2d(cells: &AuxGrid3D) -> Option<Vec<Vec<f64>>> {
 /// Calculate all single P_B,z.
 pub(crate) fn build_per_bin_support_maps(
     contrib: &[Vec<KinematicsContribution>],
-    grid_spec: &GridSpec
+    grid_spec: &GridSpec,
+    support_leg: Option<u8>,
 ) -> Result<BinSupportMaps, TransformError> {
+    let requested_mask = match support_leg {
+        None => BOTH_LEGS,
+        Some(1) => LEG_1,
+        Some(2) => LEG_2,
+        Some(leg) => return Err(TransformError::InvalidSupportLeg(leg)),
+    };
+
     if
         grid_spec.nx_x == 0 ||
         grid_spec.nx_q2 == 0 ||
@@ -235,12 +256,11 @@ pub(crate) fn build_per_bin_support_maps(
     let lq_edges = logarithmic_edges(grid_spec.q2_min, grid_spec.q2_max, grid_spec.nx_q2);
     let mut weights = Vec::with_capacity(contrib.len());
 
-    for bin in contrib {
+    for (bin_index, bin) in contrib.iter().enumerate() {
         let cells = accumulate_bin_in_3d(bin, &lx_edges, &lq_edges);
 
-        let Some(projected) = project_bin_to_2d(&cells) else {
-            continue;
-        };
+        let projected = project_bin_to_2d(&cells, requested_mask)
+            .ok_or(TransformError::EmptyBinSupport(bin_index))?;
 
         weights.push(projected);
     }
@@ -302,6 +322,77 @@ fn find_bin(value: f64, edges: &[f64]) -> Option<usize> {
     }
 
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn spec() -> GridSpec {
+        GridSpec {
+            nx_x: 2, nx_q2: 1,
+            x_min: 0.01, x_max: 1.0,
+            q2_min: 1.0, q2_max: 100.0,
+        }
+    }
+
+    fn point(x1: f64, x2: f64, value: f64, leg_mask: u8) -> KinematicsContribution {
+        KinematicsContribution { x1, x2, q2: 10.0, value, leg_mask }
+    }
+
+    fn assert_row(actual: &[f64], expected: &[f64]) {
+        assert_eq!(actual.len(), expected.len());
+        for (actual, expected) in actual.iter().zip(expected) {
+            assert!((actual - expected).abs() < 1e-12, "{actual} != {expected}");
+        }
+    }
+
+    #[test]
+    fn both_legs_reproduce_the_mean_of_normalized_single_leg_maps() {
+        let contributions = vec![vec![
+            point(0.02, 0.2, 3.0, BOTH_LEGS),
+            point(0.02, 0.2, -1.0, BOTH_LEGS),
+            point(0.02, 0.02, 1.0, BOTH_LEGS),
+        ]];
+        let both = build_per_bin_support_maps(&contributions, &spec(), None).unwrap();
+        let first = build_per_bin_support_maps(&contributions, &spec(), Some(1)).unwrap();
+        let second = build_per_bin_support_maps(&contributions, &spec(), Some(2)).unwrap();
+        assert_row(&both.weights[0][0], &[2.0 / 3.0, 1.0 / 3.0]);
+        assert_row(&first.weights[0][0], &[1.0, 0.0]);
+        assert_row(&second.weights[0][0], &[1.0 / 3.0, 2.0 / 3.0]);
+        for ix in 0..2 {
+            assert!((both.weights[0][0][ix]
+                - (first.weights[0][0][ix] + second.weights[0][0][ix]) / 2.0).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn flavour_masks_are_intersected_and_not_merged_before_absolute_values() {
+        let contributions = vec![vec![
+            point(0.02, 0.2, 100.0, LEG_1), // Excluded from leg 2 and its denominator.
+            point(0.02, 0.2, 3.0, LEG_2),
+            point(0.02, 0.2, -2.0, BOTH_LEGS), // Must not cancel the LEG_2 group.
+            point(0.2, 0.02, 1.0, LEG_2),
+        ]];
+        let second = build_per_bin_support_maps(&contributions, &spec(), Some(2)).unwrap();
+        assert_row(&second.weights[0][0], &[1.0 / 6.0, 5.0 / 6.0]);
+    }
+
+    #[test]
+    fn zero_support_aborts_instead_of_dropping_a_bin() {
+        for (empty_bin, leg) in [
+            (vec![], None),
+            (vec![point(0.02, 0.2, 1.0, LEG_1)], Some(2)),
+            (vec![point(0.02, 0.2, 1.0, BOTH_LEGS),
+                  point(0.02, 0.2, -1.0, BOTH_LEGS)], None),
+        ] {
+            let contributions = vec![vec![point(0.02, 0.2, 1.0, BOTH_LEGS)], empty_bin];
+            match build_per_bin_support_maps(&contributions, &spec(), leg) {
+                Err(TransformError::EmptyBinSupport(1)) => {},
+                _ => panic!("expected zero-support error for second bin"),
+            }
+        }
+    }
 }
 
 /// Rank the grid cells per ser size and only take 90% of the total

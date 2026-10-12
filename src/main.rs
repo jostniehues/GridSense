@@ -109,7 +109,10 @@ fn load_bin_support_grid_with_counts(
             format!("could not read grid '{}'", grid_path.display())
         )?;
 
-        let mut kinematics = extract_kinematics(&grid, selection, config.pdf()).with_context(|| {
+        // if no second pdf given, just take the reference pdf as second one
+        let second_pdf = config.second_pdf(grid_name)?.unwrap_or(config.pdf());
+
+        let mut kinematics = extract_kinematics(&grid, selection, config.pdf(),second_pdf).with_context(|| {
             format!("could not extract kinematics from grid '{}'", grid_path.display())
         })?;
 
@@ -159,7 +162,11 @@ fn load_bin_support_grid_with_counts(
     // Build the normalized support map from the three-dimensional auxiliary binning.
     let grid_spec = config.grid_spec();
 
-    let per_bin_support = build_per_bin_support_maps(&combined_kinematics, &grid_spec)?;
+    let per_bin_support = build_per_bin_support_maps(
+        &combined_kinematics,
+        &grid_spec,
+        selection.support_leg(),
+    )?;
 
     if config.detail() {
         let path = Path::new("output/data/support").join(format!("{grid_name}.csv"));
@@ -254,7 +261,7 @@ fn load_sensitivity_grid(
 
 fn main() {
     if let Err(error) = run() {
-        eprintln!("Error: {error}");
+        eprintln!("Error: {error:#}");
         std::process::exit(1);
     }
 }

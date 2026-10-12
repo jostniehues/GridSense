@@ -80,12 +80,13 @@ struct SelectionConfig {
     pdgs: Option<Vec<i32>>,
     #[serde(default)]
     leg_pdgs: Option<Vec<i32>>,
+    support_leg: Option<u8>,
     max_as: Option<u8>,
     #[serde(default, deserialize_with = "deserialize_indices")]
     channels: Option<Vec<usize>>,
     pdf: String,
     #[serde(default, deserialize_with = "deserialize_indices")]
-    bins: Option<Vec<usize>>
+    bins: Option<Vec<usize>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -104,7 +105,9 @@ fn deserialize_indices<'de, D>(deserializer: D) -> Result<Option<Vec<usize>>, D:
 
     if items.is_empty() {
         return Err(
-            de::Error::custom("indey selection must not be empty; omit the field to select all channels")
+            de::Error::custom(
+                "indey selection must not be empty; omit the field to select all channels"
+            )
         );
     }
 
@@ -161,6 +164,7 @@ struct GridEntry {
     paths: Vec<PathBuf>,
     label: String,
     experimental_data: Option<PathBuf>,
+    second_pdf: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -168,6 +172,7 @@ pub struct Selection {
     pdg: Option<i32>,
     max_as: Option<u8>,
     leg_pdgs: Option<Vec<i32>>,
+    support_leg: Option<u8>,
     channels: Option<Vec<usize>>,
     bins: Option<Vec<usize>>,
 }
@@ -269,6 +274,12 @@ impl GridConfig {
         Ok(path.clone())
     }
 
+    pub fn second_pdf(&self, grid_name: &str) -> Result<Option<&str>> {
+        self.grids
+            .get(grid_name)
+            .map(|entry| entry.second_pdf.as_deref())
+            .ok_or_else(|| anyhow!("grid '{grid_name}' is not defined in the configuration file"))
+    }
 }
 
 impl SelectionConfig {
@@ -281,9 +292,10 @@ impl SelectionConfig {
                     .map(|pdg| Selection {
                         pdg: Some(pdg),
                         leg_pdgs: None,
+                        support_leg: self.support_leg,
                         max_as: self.max_as,
                         channels: None,
-                        bins: self.bins.clone()
+                        bins: self.bins.clone(),
                     })
                     .collect(),
 
@@ -291,14 +303,19 @@ impl SelectionConfig {
                 vec![Selection {
                     pdg: None,
                     leg_pdgs: self.leg_pdgs.clone(),
+                    support_leg: self.support_leg,
                     max_as: self.max_as,
                     channels: self.channels.clone(),
-                    bins: self.bins.clone()
+                    bins: self.bins.clone(),
                 }],
         }
     }
 
     fn validate(&self) -> Result<()> {
+        if self.support_leg.is_some_and(|leg| !matches!(leg, 1 | 2)) {
+            anyhow::bail!("selection_conf.support_leg must be 1 or 2");
+        }
+
         if self.pdgs.as_ref().is_some_and(Vec::is_empty) {
             anyhow::bail!("selection_conf.pdgs must not be empty; omit the field instead");
         }
@@ -358,6 +375,10 @@ impl Selection {
         self.leg_pdgs.as_deref()
     }
 
+    pub fn support_leg(&self) -> Option<u8> {
+        self.support_leg
+    }
+
     pub fn bins(&self) -> Option<&[usize]> {
         self.bins.as_deref()
     }
@@ -382,7 +403,6 @@ pub fn read_config(config_path: &Path) -> Result<GridConfig> {
 
 /// Resolves the full filesystem path for a configured grid name. Get the file_name for a certain grid
 pub fn resolve_grid_paths(config: &GridConfig, grid_name: &str) -> Result<Vec<PathBuf>> {
-
     let Some(grid) = config.grids.get(grid_name) else {
         anyhow::bail!("grid '{grid_name}' is not defined");
     };
@@ -391,16 +411,45 @@ pub fn resolve_grid_paths(config: &GridConfig, grid_name: &str) -> Result<Vec<Pa
         anyhow::bail!("grid '{grid_name}' contains no paths");
     }
 
-    Ok(grid
-        .paths
-        .iter()
-        .map(|path| config.path_to_grids.join(path))
-        .collect())
+    Ok(
+        grid.paths
+            .iter()
+            .map(|path| config.path_to_grids.join(path))
+            .collect()
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn support_leg_defaults_to_both_and_reaches_every_selection() {
+        for extra in ["", "pdgs = [21, 2]", "leg_pdgs = [21]"] {
+            for leg in [None, Some(1), Some(2)] {
+                let mut input = format!("pdf = \"CT18NNLO\"\n{extra}\n");
+                if let Some(leg) = leg {
+                    input.push_str(&format!("support_leg = {leg}\n"));
+                }
+                let config: SelectionConfig = toml::from_str(&input).unwrap();
+                config.validate().unwrap();
+                let selections = config.selection();
+                assert!(!selections.is_empty());
+                assert!(selections.iter().all(|selection| selection.support_leg() == leg));
+            }
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_support_legs() {
+        for leg in [0, 3, 255] {
+            let config: SelectionConfig = toml::from_str(
+                &format!("pdf = \"CT18NNLO\"\nsupport_leg = {leg}\n"),
+            ).unwrap();
+            assert_eq!(config.validate().unwrap_err().to_string(),
+                "selection_conf.support_leg must be 1 or 2");
+        }
+    }
 
     #[test]
     fn parses_channel_indices_and_ranges() {
@@ -428,7 +477,9 @@ channels = ["5-1"]
 
     #[test]
     fn parses_global_support_group_weighting() {
-        let output: OutputConfig = toml::from_str(r#"
+        let output: OutputConfig = toml
+            ::from_str(
+                r#"
 path_plot = "plot.pdf"
 process_grid = ["wp_atlas", "wm_atlas"]
 detail = false
@@ -436,7 +487,9 @@ support_group_weighting = "bins"
 
 [groups]
 "ATLAS DY" = ["wp_atlas", "wm_atlas"]
-"#).unwrap();
+"#
+            )
+            .unwrap();
 
         assert_eq!(output.support_group_weighting, SupportGroupWeighting::Bins);
         assert_eq!(output.groups["ATLAS DY"].len(), 2);

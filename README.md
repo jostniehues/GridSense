@@ -214,11 +214,14 @@ This block selects the PDF, perturbative orders, partonic channels, and incoming
 - `pdgs`: optional initial-state PDG selection
 - `channels`: optional list of zero-based PineAPPL channel indices
 - `leg_pdgs`: optional list of PDGs whose matching incoming legs are projected
+- `support_leg`: optional incoming leg to project: `1` keeps `x1`, `2` keeps `x2`. Omit to project both eligible legs as before. Applies to every processed grid in both `supp` and `sense` modes and intersects with `leg_pdgs` when supplied. Both PDFs remain in the convolution.
 - `bins`: optional observable-bin selection, available only in `supp` mode. Indices are zero-based; integers and inclusive quoted ranges use the same syntax as `channels`.
 
 For example, `bins = [3]` selects only the fourth observable bin; `bins = [1, "3-5"]` averages the support maps of the selected bins. Omit `bins` to use all bins; empty lists and out-of-range indices are rejected. The selection applies to each processed grid. For a grid with multiple `paths`, indices refer to the concatenated bins in the listed file order. Bin selection is rejected in `sense` mode.
 
-There are three projection modes.
+For example, `support_leg = 2` together with `leg_pdgs = [21]` projects only gluons on the second incoming leg. Normalization uses only the contributing mask groups, keeping their signed sums separate before taking absolute values. A selected observable bin with zero support (`A_B = 0`) aborts the run; the reported bin index is zero-based within the selected bins. Plot labels and raw contribution exports are unchanged by `support_leg`.
+
+There are three flavour/channel projection modes, each of which can be restricted by `support_leg`.
 
 #### Initial-state PDG selection
 
@@ -228,7 +231,7 @@ pdf = "CT18NNLO"
 pdgs = [0, 3]
 ```
 
-Each value in `pdgs` creates a separate projection. A channel entry is retained when the requested PDG occurs anywhere in its initial state, and both incoming legs are projected. Thus this mode describes the support of processes containing the requested parton, rather than only the location of that parton.
+Each value in `pdgs` creates a separate projection. A channel entry is retained when the requested PDG occurs anywhere in its initial state, and both incoming legs are eligible for projection (`support_leg` can restrict this). Thus this mode describes the support of processes containing the requested parton, rather than only the location of that parton.
 
 #### Channel selection
 
@@ -238,7 +241,7 @@ pdf = "CT18NNLO"
 channels = [6, "7-17", 21]
 ```
 
-`channels` selects complete PineAPPL channels. Integer entries select one channel; quoted ranges are inclusive. Duplicate indices are removed and the resulting indices are sorted. Both incoming legs are projected.
+`channels` selects complete PineAPPL channels. Integer entries select one channel; quoted ranges are inclusive. Duplicate indices are removed and the resulting indices are sorted. Both incoming legs are projected unless `support_leg` is set.
 
 Channel indices are zero-based and refer to the ordering in the individual PineAPPL grid. They can be inspected with:
 
@@ -297,5 +300,4 @@ The project may currently create:
   - configured through `output.path_plot`
 
 The CSV is currently a fixed debug-style output and may change later.
-
 

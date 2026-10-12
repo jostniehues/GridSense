@@ -27,3 +27,4 @@ threshold = 0.9
 pdf = "CT18NNLO" # Must be installed in LHAPDF.
 max_as = 2 # Relative to the lowest alpha_s power: 0 = LO, 1 = NLO, 2 = NNLO. If available, all EW orders are included
 # All channels and both incoming legs are included by default.
+# support_leg = 2 # Project x2 only; omit for both legs. Also combines with leg_pdgs.
