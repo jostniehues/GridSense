@@ -641,6 +641,7 @@ checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 [[package]]
 name = "pineappl"
 version = "1.3.3"
+source = "git+https://github.com/jostniehues/pineappl.git?rev=43116b13abc88bc8b89864920bcec50e8d555474#43116b13abc88bc8b89864920bcec50e8d555474"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -662,6 +663,7 @@ dependencies = [
 [[package]]
 name = "pineappl_v0"
 version = "1.3.3"
+source = "git+https://github.com/jostniehues/pineappl.git?rev=43116b13abc88bc8b89864920bcec50e8d555474#43116b13abc88bc8b89864920bcec50e8d555474"
 dependencies = [
  "bincode",
  "enum_dispatch",

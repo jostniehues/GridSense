@@ -23,15 +23,13 @@ You currently need:
 - `numpy`
 - `matplotlib`
 - LHAPDF installed and usable through the Rust `lhapdf` crate
-- access to the local `pineappl` fork referenced in `Cargo.toml`
 
-The project currently depends on a local PineAPPL checkout:
+The project currently depends on a modified PineAPPL fork:
 
 ```toml
-pineappl = { path = "/home/jnieh/uni/projects/pineappl_fork/pineappl/pineappl" }
+pineappl = {git = "https://github.com/jostniehues/pineappl.git" }
 ```
 
-If your PineAPPL fork lives somewhere else, adjust that path in `Cargo.toml`.
 
 ## Python setup
 
